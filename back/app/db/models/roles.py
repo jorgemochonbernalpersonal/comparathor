@@ -19,3 +19,4 @@ class Role(BaseModel):
 
     def __str__(self):
         return f"Role(id={self.id}, name={self.name})"
+

@@ -30,20 +30,23 @@ async def get_user(user_id: str, db=Depends(get_db)):
 
 @router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
 async def create_user(user: User, db=Depends(get_db)):
-    """
-    Endpoint para registrar un nuevo usuario.
-    """
+    print("Datos recibidos:", user.dict())
     existing_user = await db["users"].find_one({"email": user.email})
     if existing_user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Email ya registrado"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El correo electrónico ya está registrado.",
         )
+
     user_dict = user.model_dump(by_alias=True, exclude={"id", "password"})
     if user.password:
         user_dict["password_hash"] = get_password_hash(user.password)
 
     result = await db["users"].insert_one(user_dict)
     user.id = result.inserted_id
+
+    print(f"Usuario creado con ID {user.id} y correo {user.email}")
+
     return user
 
 

@@ -9,14 +9,12 @@ async def test_e2e_create_and_list_roles(async_client, db):
     """
     role_data = {"name": "Admin", "description": "Administrador del sistema"}
 
-    # Crear un rol
     create_response = await async_client.post("/api/v1/roles/", json=role_data)
     assert create_response.status_code == 201
     created_role = create_response.json()
     assert created_role["name"] == "Admin"
     assert created_role["description"] == "Administrador del sistema"
 
-    # Listar roles
     list_response = await async_client.get("/api/v1/roles/")
     assert list_response.status_code == 200
     roles = list_response.json()
@@ -30,12 +28,10 @@ async def test_e2e_get_role_by_id(async_client, db):
     """
     role_data = {"name": "Editor", "description": "Editor de contenidos"}
 
-    # Crear un rol
     create_response = await async_client.post("/api/v1/roles/", json=role_data)
     assert create_response.status_code == 201
     created_role = create_response.json()
 
-    # Obtener el rol por ID
     role_id = created_role["_id"]
     get_response = await async_client.get(f"/api/v1/roles/{role_id}")
     assert get_response.status_code == 200
@@ -51,12 +47,10 @@ async def test_e2e_update_role(async_client, db):
     """
     role_data = {"name": "Viewer", "description": "Visualizador de contenidos"}
 
-    # Crear un rol
     create_response = await async_client.post("/api/v1/roles/", json=role_data)
     assert create_response.status_code == 201
     created_role = create_response.json()
 
-    # Actualizar el rol
     role_id = created_role["_id"]
     updated_data = {"name": "Viewer Updated", "description": "Rol actualizado"}
     update_response = await async_client.put(

@@ -1,0 +1,54 @@
+{
+    "app": {
+      "title": "COMPARATHOR: Comparador Personal de Productos",
+      "description": "Compara productos fácilmente y toma mejores decisiones de compra."
+    },
+    "auth": {
+      "login": {
+        "title": "Iniciar Sesión",
+        "email_placeholder": "Introduce tu correo electrónico",
+        "password_placeholder": "Introduce tu contraseña",
+        "button": "Ingresar",
+        "error": "Correo electrónico o contraseña inválidos."
+      },
+      "register": {
+        "title": "Registrarse",
+        "name_placeholder": "Introduce tu nombre",
+        "email_placeholder": "Introduce tu correo electrónico",
+        "password_placeholder": "Crea una contraseña",
+        "button": "Registrarse",
+        "success": "¡Cuenta creada con éxito! Por favor, inicia sesión."
+      }
+    },
+    "navigation": {
+      "home": "Inicio",
+      "products": "Productos",
+      "comparisons": "Comparativas",
+      "admin": "Administración",
+      "logout": "Cerrar Sesión"
+    },
+    "roles": {
+      "admin": "Administrador",
+      "user": "Usuario",
+      "editor": "Editor"
+    },
+    "products": {
+      "add_new": "Añadir Nuevo Producto",
+      "list_title": "Lista de Productos",
+      "details": "Detalles",
+      "delete_confirmation": "¿Estás seguro de que deseas eliminar este producto?",
+      "edit_button": "Editar",
+      "delete_button": "Eliminar"
+    },
+    "comparisons": {
+      "title": "Comparativas de Productos",
+      "create_new": "Crear Nueva Comparativa",
+      "no_data": "No se encontraron comparativas.",
+      "recommended": "Producto Recomendado"
+    },
+    "errors": {
+      "not_found": "Página no encontrada.",
+      "server_error": "Ocurrió un error. Por favor, intenta nuevamente más tarde."
+    }
+  }
+  

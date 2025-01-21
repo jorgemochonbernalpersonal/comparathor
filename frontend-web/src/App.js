@@ -1,21 +1,26 @@
+// src/App.js
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import NotFound from './pages/NotFound';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { UserProvider } from './contexts/UserContext';
+import { RoleProvider } from './contexts/RoleContext';
+import AllRoutes from './router/Index';
+import Header from './components/Shared/Header';
+import Footer from './components/Shared/Footer';
 
-function App() {
+const App = () => {
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+      <UserProvider>
+          <RoleProvider> 
+              <Router>
+                  <Header />
+                  <main>
+                      <AllRoutes />
+                  </main>
+                  <Footer />
+              </Router>
+          </RoleProvider>
+      </UserProvider>
   );
-}
+};
 
 export default App;
