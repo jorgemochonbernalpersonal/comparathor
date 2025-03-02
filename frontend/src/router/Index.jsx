@@ -1,15 +1,15 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import Header from "../components/Shared/Header";
-import Footer from "../components/Shared/Footer";
+import Header from "../components/shared/Header";
+import Footer from "../components/shared/Footer";
 import Home from "../components/Public/Home";
 import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import AdminRoute from "../router/AdminRoute";
 import AdminPage from "../pages/AdminPage";
-import ProductList from "../components/Admin/Products/ProductList";
-import ProductForm from "../components/Admin/Products/ProductForm";
-import UserList from "../components/Admin/Users/UserList";
+import ProductList from "../components/admin/products/ProductList";
+import ProductForm from "../components/admin/products/ProductForm";
+import UserList from "../components/admin/users/UserList";
 
 const AppRoutes = () => {
     return (

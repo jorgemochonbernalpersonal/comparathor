@@ -1,5 +1,5 @@
 import React from "react";
-import Form from "../Shared/Form";
+import Form from "../shared/Form";
 
 const AuthForm = ({ title, fields, onSubmit, submitText }) => {
     return (

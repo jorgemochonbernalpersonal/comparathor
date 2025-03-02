@@ -6,7 +6,7 @@ import {
     addRole,
     updateRoleById,
     deleteRoleById,
-} from "../api/role/RoleLogic";
+} from "../api/roles/RoleLogic";
 
 const RoleContext = createContext();
 

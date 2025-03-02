@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useRole } from "../../../contexts/RoleContext";
-import Table from "../../Shared_pepe/Table";
-import FilterBar from "../../Shared_pepe/FilterBar";
-import Modal from "../../Shared_pepe/Modal";
+import Table from "../../shared/Table";
+import FilterBar from "../../shared/FilterBar";
+import Modal from "../../shared/Modal";
 import RoleForm from "./RoleForm";
 
 const RoleList = () => {
