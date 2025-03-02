@@ -1,27 +1,19 @@
 package com.comparathor.model;
 
-import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDateTime;
 
-@Entity
-@Table(name = "ratings")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class Rating extends BaseEntity {
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @ManyToOne
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
-
-    @Column(nullable = false)
+public class Rating {
+    private Long id;
+    private Long userId;
+    private Long productId;
     private Double rating;
-
     private String comment;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

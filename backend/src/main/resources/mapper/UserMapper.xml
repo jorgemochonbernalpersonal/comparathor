@@ -3,60 +3,79 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
 <mapper namespace="com.comparathor.repository.UserRepository">
+
+    <!-- Mapeo de resultados para User -->
     <resultMap id="UserResultMap" type="com.comparathor.model.User">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
         <result property="email" column="email"/>
         <result property="password" column="password"/>
         <result property="createdAt" column="created_at"/>
-        <association property="role" column="role_name" javaType="com.comparathor.model.Role">
+        <association property="role" javaType="com.comparathor.model.Role">
+            <id property="id" column="role_id"/>
             <result property="name" column="role_name"/>
         </association>
     </resultMap>
 
-    <!-- Buscar un usuario por ID -->
-    <select id="findById" resultMap="UserResultMap">
-        SELECT u.id, u.name, u.email, u.password, u.created_at, r.name AS role_name
+    <!-- 🔍 Buscar usuarios con filtros y paginación -->
+    <select id="findFilteredUsers" resultMap="UserResultMap">
+        SELECT u.id, u.name, u.email, u.password, u.created_at, r.id AS role_id, r.name AS role_name
         FROM users u
-                 JOIN roles r ON r.id = u.role_id
-        WHERE u.id = #{id}
+        JOIN roles r ON r.id = u.role_id
+        WHERE 1=1
+
+        <if test="roleName != null and roleName != ''">
+            AND r.name = #{roleName}
+        </if>
+
+        <if test="searchTerm != null and searchTerm != ''">
+            AND (LOWER(u.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', #{searchTerm}, '%')))
+        </if>
+
+        <if test="startDate != null">
+            AND u.created_at >= #{startDate}
+        </if>
+
+        <if test="endDate != null">
+            AND u.created_at &lt;= #{endDate}
+        </if>
+
+        ORDER BY u.created_at DESC
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
-    <!-- Buscar un usuario por Email -->
+    <!-- 🔢 Contar usuarios filtrados -->
+    <select id="countFilteredUsers" resultType="int">
+        SELECT COUNT(*)
+        FROM users u
+        JOIN roles r ON r.id = u.role_id
+        WHERE 1=1
+
+        <if test="roleName != null and roleName != ''">
+            AND r.name = #{roleName}
+        </if>
+
+        <if test="searchTerm != null and searchTerm != ''">
+            AND (LOWER(u.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(u.email) LIKE LOWER(CONCAT('%', #{searchTerm}, '%')))
+        </if>
+
+        <if test="startDate != null">
+            AND u.created_at >= #{startDate}
+        </if>
+
+        <if test="endDate != null">
+            AND u.created_at &lt;= #{endDate}
+        </if>
+    </select>
+    <!-- 🔍 Buscar usuario por email -->
     <select id="findByEmail" resultMap="UserResultMap">
-        SELECT u.id, u.name, u.email, u.password, u.created_at, r.name AS role_name
+        SELECT u.id, u.name, u.email, u.password, u.created_at, r.id AS role_id, r.name AS role_name
         FROM users u
                  JOIN roles r ON r.id = u.role_id
         WHERE u.email = #{email}
     </select>
 
-    <!-- Verificar si existe un usuario con el email -->
-    <select id="existsByEmail" resultType="int">
-        SELECT COUNT(*) FROM users WHERE email = #{email}
-    </select>
-
-    <!-- Guardar un nuevo usuario -->
-    <insert id="save" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO users (name, email, password, role_id, created_at, updated_at)
-        VALUES (#{name}, #{email}, #{password},
-                (SELECT id FROM roles WHERE name = #{role.name}), NOW(), NOW())
-    </insert>
-
-    <!-- Buscar usuarios con filtros -->
-    <select id="findFilteredUsers" resultMap="UserResultMap">
-        SELECT u.id, u.name, u.email, u.password, u.created_at, r.name AS role_name
-        FROM users u
-        JOIN roles r ON r.id = u.role_id
-        WHERE 1=1
-        <if test="roleName != null">AND r.name = #{roleName}</if>
-        <if test="searchTerm != null and searchTerm != ''">
-            AND (LOWER(u.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            OR LOWER(u.email) LIKE LOWER(CONCAT('%', #{searchTerm}, '%')))
-        </if>
-        <if test="startDate != null">AND u.created_at >= #{startDate}</if>
-        <if test="endDate != null">AND u.created_at <= #{endDate}</if>
-        ORDER BY u.created_at DESC
-        LIMIT #{size} OFFSET #{offset}
-    </select>
 
 </mapper>

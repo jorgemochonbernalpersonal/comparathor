@@ -4,32 +4,34 @@
 
 <mapper namespace="com.comparathor.repository.RoleRepository">
 
-    <!-- Obtener todos los roles -->
     <select id="findAll" resultType="com.comparathor.model.Role">
         SELECT id, name, description FROM roles
     </select>
 
-    <!-- Buscar un rol por ID -->
     <select id="findById" resultType="com.comparathor.model.Role">
         SELECT id, name, description FROM roles WHERE id = #{id}
     </select>
 
-    <!-- Buscar un rol por nombre -->
     <select id="findByName" resultType="com.comparathor.model.Role">
         SELECT id, name, description FROM roles WHERE name = #{name}
     </select>
 
-    <!-- Verificar si un rol existe por nombre -->
+    <select id="findByNames" resultType="com.comparathor.model.Role">
+        SELECT id, name, description FROM roles
+        WHERE name IN
+        <foreach collection="names" item="name" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+    </select>
+
     <select id="existsByName" resultType="boolean">
         SELECT COUNT(*) > 0 FROM roles WHERE name = #{name}
     </select>
 
-    <!-- Insertar un nuevo rol -->
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO roles (name, description) VALUES (#{name}, #{description})
     </insert>
 
-    <!-- Eliminar un rol por ID -->
     <delete id="deleteById">
         DELETE FROM roles WHERE id = #{id}
     </delete>

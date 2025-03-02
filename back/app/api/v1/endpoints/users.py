@@ -1,111 +1,131 @@
-from fastapi import APIRouter, HTTPException, status, Depends, Body
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.database import get_db
+from app.services.user_service import UserService
+from app.db.schemas import UserResponse, UserUpdate
+from app.core.security import get_current_user
 from typing import List
-from datetime import datetime
-from bson import ObjectId
-from app.db.dependencies import get_db
-from app.db.models.users import User
-from app.core.security import get_password_hash, verify_password
-
-router = APIRouter()
+from app.core.logging_config import logger
 
 
-@router.get("/{user_id}", response_model=User, status_code=status.HTTP_200_OK)
-async def get_user(user_id: str, db=Depends(get_db)):
-    """
-    Endpoint para obtener un usuario por su ID.
-    """
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="ID de usuario inválido"
-        )
-
-    user = await db["users"].find_one({"_id": ObjectId(user_id)})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
-        )
-
-    return User(**user)
+router = APIRouter(
+    tags=["Users"]
+)  # 👈 Quitamos el prefix porque ya está en `include_router()`
+user_service = UserService()
 
 
-@router.post("/", response_model=User, status_code=status.HTTP_201_CREATED)
-async def create_user(user: User, db=Depends(get_db)):
-    print("Datos recibidos:", user.dict())
-    existing_user = await db["users"].find_one({"email": user.email})
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="El correo electrónico ya está registrado.",
-        )
-
-    user_dict = user.model_dump(by_alias=True, exclude={"id", "password"})
-    if user.password:
-        user_dict["password_hash"] = get_password_hash(user.password)
-
-    result = await db["users"].insert_one(user_dict)
-    user.id = result.inserted_id
-
-    print(f"Usuario creado con ID {user.id} y correo {user.email}")
-
-    return user
-
-
-@router.post("/login")
-async def login_user(
-    db=Depends(get_db),
-    email: str = Body(..., embed=True, description="Correo electrónico del usuario"),
-    password: str = Body(..., embed=True, description="Contraseña del usuario"),
+@router.get("/me", response_model=UserResponse, name="Obtener Perfil del Usuario")
+async def get_my_profile(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    """
-    Endpoint para autenticar a un usuario.
-    """
-    user = await db["users"].find_one({"email": email})
-    if not user or not verify_password(password, user.get("password_hash", "")):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Credenciales incorrectas.",
-        )
-    return {"message": "Autenticación exitosa"}
+    """📌 Obtiene el perfil del usuario autenticado."""
+    logger.info(f"✅ Perfil accedido por {current_user.email}")
+    return current_user
 
 
-@router.put("/{user_id}", response_model=User, status_code=status.HTTP_200_OK)
-async def update_user(user_id: str, user: User, db=Depends(get_db)):
-    """
-    Endpoint para actualizar un usuario existente.
-    """
-    if not ObjectId.is_valid(user_id):
+@router.get("/users", response_model=List[UserResponse], name="Listar Usuarios")
+async def list_users(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    print("📢 Endpoint `/users/` fue llamado")
+    logger.info("🔍 Se ejecutó correctamente /users/, devolviendo datos...")
+
+    if current_user.role != "admin":
+        logger.warning(f"🚨 Acceso no autorizado a /users por {current_user.email}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="ID de usuario inválido"
+            status_code=status.HTTP_403_FORBIDDEN, detail="No autorizado"
         )
 
-    existing_user = await db["users"].find_one({"_id": ObjectId(user_id)})
-    if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
+    try:
+        print("📢 Ejecutando consulta en DB...")
+        result = await db.execute("SELECT * FROM users;")
+        users = result.fetchall()
+        print(
+            f"📢 Usuarios en DB: {users}"
+        )  # 👈 Esto debe mostrar los usuarios en la terminal
+
+        return users
+    except Exception as e:
+        print(f"❌ Error en SQL: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+
+@router.get("/{user_id}", response_model=UserResponse, name="Obtener Usuario por ID")
+async def get_user(
+    user_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """📌 Obtiene un usuario por ID."""
+    try:
+        user = await user_service.get_user(user_id, db)
+        if not user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        logger.info(f"👤 Usuario {user_id} obtenido por {current_user.email}")
+        return user
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error obteniendo usuario {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+
+@router.put("/{user_id}", response_model=UserResponse, name="Actualizar Usuario")
+async def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """📌 Actualiza la información de un usuario."""
+    try:
+        if current_user.role != "admin" and current_user.id != user_id:
+            logger.warning(
+                f"🚨 Acceso no autorizado para actualizar usuario {user_id} por {current_user.email}"
+            )
+            raise HTTPException(status_code=403, detail="No autorizado")
+
+        updated_user = await user_service.update_user(user_id, user_data, db)
+        if not updated_user:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+        logger.info(f"✏️ Usuario {user_id} actualizado por {current_user.email}")
+        return updated_user
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error actualizando usuario {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")
+
+
+@router.delete("/{user_id}", name="Eliminar Usuario")
+async def delete_user(
+    user_id: int,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """📌 Elimina un usuario (solo administradores)."""
+    if current_user.role != "admin":
+        logger.warning(
+            f"🚨 Acceso no autorizado a eliminar usuario {user_id} por {current_user.email}"
         )
+        raise HTTPException(status_code=403, detail="No autorizado")
 
-    user_dict = user.model_dump(by_alias=True, exclude={"id", "password"})
-    if user.password:
-        user_dict["password_hash"] = get_password_hash(user.password)
+    try:
+        success = await user_service.delete_user(user_id, db)
+        if not success:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": user_dict})
-    updated_user = await db["users"].find_one({"_id": ObjectId(user_id)})
-    return User(**updated_user)
+        logger.info(f"🗑️ Usuario {user_id} eliminado por {current_user.email}")
+        return {"message": "Usuario eliminado exitosamente"}
 
-
-@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: str, db=Depends(get_db)):
-    """
-    Endpoint para eliminar un usuario por su ID.
-    """
-    if not ObjectId.is_valid(user_id):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="ID de usuario inválido"
-        )
-
-    delete_result = await db["users"].delete_one({"_id": ObjectId(user_id)})
-    if delete_result.deleted_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado"
-        )
-    return None
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"❌ Error eliminando usuario {user_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error interno del servidor")

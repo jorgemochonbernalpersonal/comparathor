@@ -1,22 +1,23 @@
-import com.comparathor.model.BaseEntity;
-import com.comparathor.model.User;
-import jakarta.persistence.*;
+package com.comparathor.model;
 
-@Entity
-@Table(name = "comparisons", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_user_comparison_title", columnNames = {"user_id", "title"})
-})
-public class Comparison extends BaseEntity {
+import lombok.*;
+import java.time.LocalDateTime;
 
-    @Column(nullable = false)
-    private String title;
-
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString
+public class Product {
+    private Long id;
+    private String name;
+    private String category;
+    private Double price;
+    private Integer stock;
     private String description;
-
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
-
-    @OneToMany(mappedBy = "comparison", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ComparisonProduct> comparisonProducts;
+    private String brand;
+    private String model;
+    private String imageUrl;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 }

@@ -1,0 +1,45 @@
+# 📌 Ignorar archivos de configuración sensibles
+.env
+*.env
+
+# 🚀 Ignorar archivos generados por Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# 🏗 Ignorar archivos de compilación
+*.class
+*.jar
+*.war
+*.ear
+*.iml
+
+# ⚙ Ignorar archivos de configuración del IDE (IntelliJ, Eclipse, VS Code)
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.classpath
+*.project
+*.settings/
+
+# 🛠 Ignorar archivos de logs y registros
+logs/
+*.log
+*.out
+
+# 🔥 Ignorar archivos de caché y dependencias
+node_modules/
+*.tmp
+*.cache
+.DS_Store
+Thumbs.db
+
+# 📜 Ignorar archivos de configuración del sistema operativo
+*.swp
+*.swo
+*.swn
