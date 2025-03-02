@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthForm from "./AuthForm";
+import AuthForm from "../auth/AuthForm";
 import LoadingSpinner from "../shared/LoadingSpinner";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../hooks/UseRole";
@@ -28,7 +28,7 @@ const Register = () => {
                 username: values.name,
                 email: values.email,
                 password: values.password,
-                role: values.role || ROLES.REGISTERED, // Asegurar un rol predeterminado
+                role: values.role || ROLES.REGISTERED, 
             });
 
             if (!response || !response.accessToken || !response.refreshToken || !response.user) {

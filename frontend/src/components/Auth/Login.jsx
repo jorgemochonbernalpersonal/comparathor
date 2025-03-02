@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthForm from "./AuthForm";
+import AuthForm from "../auth/AuthForm";
 import LoadingSpinner from "../shared/LoadingSpinner";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRole } from "../../hooks/UseRole";
