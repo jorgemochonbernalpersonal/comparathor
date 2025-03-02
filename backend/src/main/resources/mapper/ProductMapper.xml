@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.comparathor.repository.ProductRepository">
+
+    <!-- Insertar un nuevo producto -->
+    <insert id="insertProduct" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO products (name, category, price, stock, description, brand, model, image_url, created_at, updated_at)
+        VALUES (#{name}, #{category}, #{price}, #{stock}, #{description}, #{brand}, #{model}, #{imageUrl}, NOW(), NOW())
+    </insert>
+
+    <!-- Actualizar un producto -->
+    <update id="updateProduct">
+        UPDATE products
+        SET name = #{name}, category = #{category}, price = #{price}, stock = #{stock},
+            description = #{description}, brand = #{brand}, model = #{model}, image_url = #{imageUrl}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Buscar un producto por ID -->
+    <select id="findById" resultType="com.comparathor.model.Product">
+        SELECT id, name, category, price, stock, description, brand, model, image_url, created_at, updated_at
+        FROM products
+        WHERE id = #{id}
+    </select>
+
+    <!-- Obtener todos los productos -->
+    <select id="findAllProducts" resultType="com.comparathor.model.Product">
+        SELECT id, name, category, price, stock, description, brand, model, image_url, created_at, updated_at
+        FROM products
+    </select>
+
+    <!-- Obtener productos por categoría -->
+    <select id="findByCategory" resultType="com.comparathor.model.Product">
+        SELECT id, name, category, price, stock, description, brand, model, image_url, created_at, updated_at
+        FROM products
+        WHERE category = #{category}
+    </select>
+
+    <!-- Verificar si un producto existe por ID -->
+    <select id="existsById" resultType="int">
+        SELECT COUNT(*) FROM products WHERE id = #{id}
+    </select>
+
+    <!-- Verificar si un producto existe por nombre -->
+    <select id="existsByName" resultType="int">
+        SELECT COUNT(*) FROM products WHERE name = #{name}
+    </select>
+
+    <!-- Eliminar un producto por ID -->
+    <delete id="deleteProduct">
+        DELETE FROM products WHERE id = #{id}
+    </delete>
+
+</mapper>

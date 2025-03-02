@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.comparathor.repository.RatingRepository">
+
+    <!-- Insertar una nueva calificación -->
+    <insert id="insertRating" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ratings (user_id, product_id, rating, comment, created_at, updated_at)
+        VALUES (#{userId}, #{productId}, #{rating}, #{comment}, NOW(), NOW())
+    </insert>
+
+    <!-- Buscar una calificación por ID -->
+    <select id="findById" resultType="com.comparathor.model.Rating">
+        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
+        FROM ratings
+        WHERE id = #{id}
+    </select>
+
+    <!-- Obtener todas las calificaciones -->
+    <select id="findAllRatings" resultType="com.comparathor.model.Rating">
+        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
+        FROM ratings
+    </select>
+
+    <!-- Obtener calificaciones por producto -->
+    <select id="findByProductId" resultType="com.comparathor.model.Rating">
+        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
+        FROM ratings
+        WHERE product_id = #{productId}
+    </select>
+
+    <!-- Verificar si una calificación existe por ID -->
+    <select id="existsById" resultType="int">
+        SELECT COUNT(*) FROM ratings WHERE id = #{id}
+    </select>
+
+    <!-- Actualizar una calificación -->
+    <update id="updateRating">
+        UPDATE ratings
+        SET rating = #{rating}, comment = #{comment}, updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- Eliminar una calificación por ID -->
+    <delete id="deleteRating">
+        DELETE FROM ratings WHERE id = #{id}
+    </delete>
+
+</mapper>

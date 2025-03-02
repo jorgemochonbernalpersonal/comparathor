@@ -1,0 +1,46 @@
+/* Contenedor del Spinner */
+.spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+}
+
+/* Tamaño del Spinner */
+.spinner-container.small .spinner {
+    width: 20px;
+    height: 20px;
+    border-width: 3px;
+}
+
+.spinner-container.medium .spinner {
+    width: 35px;
+    height: 35px;
+    border-width: 4px;
+}
+
+.spinner-container.large .spinner {
+    width: 50px;
+    height: 50px;
+    border-width: 5px;
+}
+
+/* Estilo del Spinner */
+.spinner {
+    border-radius: 50%;
+    border-style: solid;
+    border-width: 4px;
+    border-color: #007bff transparent transparent transparent;
+    animation: spin 1s linear infinite;
+}
+
+/* Animación de Rotación */
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,14 @@
+.dashboard-container {
+    margin-top: 8rem;
+}
+
+.card-centered {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.card-icon {
+    font-size: 3.5rem;
+}
