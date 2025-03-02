@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { useProduct } from "../../../contexts/ProductContext";
 import { useParams, useNavigate } from "react-router-dom";
+import { useProduct } from "../../../../contexts/ProductContext";
 
 const ProductForm = ({ onSave }) => {
+    const { products } = useProduct()
     const { id } = useParams();
     const navigate = useNavigate();
-    const { products } = useProduct();
     const [errorMessage, setErrorMessage] = useState("");
     const [previewImages, setPreviewImages] = useState([]);
 
@@ -15,6 +15,7 @@ const ProductForm = ({ onSave }) => {
         category: "",
         name: "",
         description: "",
+
         brand: "",
         model: "",
         price: "",
@@ -199,3 +200,4 @@ const ProductForm = ({ onSave }) => {
 };
 
 export default ProductForm;
+ 

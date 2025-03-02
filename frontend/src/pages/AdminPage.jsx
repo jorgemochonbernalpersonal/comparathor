@@ -1,6 +1,6 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
-import DashboardGrid from "../components/Admin/DashboardGrid";
+import DashboardGrid from "../components/admin/DashboardGrid";
 
 const AdminPage = () => {
     return (

@@ -5,7 +5,7 @@ import CellDate from "../../shared/CellDate";
 import ProductFilters from "./filter/ProductFilters";
 import FilterBar from "../../shared/FilterBar";
 import Modal from "../../shared/Modal";
-import ProductForm from "./form/ProductForm";
+import ProductForm from "./form/ProductForm"
 
 const ProductList = () => {
     const { loadProducts, updateProductById, addProduct, deleteProductById, isLoading, totalProducts } = useProduct();

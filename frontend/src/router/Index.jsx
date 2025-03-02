@@ -7,9 +7,8 @@ import Login from "../components/Auth/Login";
 import Register from "../components/Auth/Register";
 import AdminRoute from "../router/AdminRoute";
 import AdminPage from "../pages/AdminPage";
-import ProductList from "../components/admin/products/ProductList";
-import ProductForm from "../components/admin/products/ProductForm";
 import UserList from "../components/admin/users/UserList";
+import ProductList from "../components/admin/products/ProductList";
 
 const AppRoutes = () => {
     return (
@@ -24,8 +23,6 @@ const AppRoutes = () => {
                     <Route path="/admin/*" element={<AdminRoute />}>
                         <Route path="" element={<AdminPage />}>
                             <Route path="products" element={<ProductList />} />
-                            <Route path="product/new" element={<ProductForm />} />
-                            <Route path="product/:id/edit" element={<ProductForm />} />
                             <Route path="users" element={<UserList />} />
                         </Route>
                     </Route>
