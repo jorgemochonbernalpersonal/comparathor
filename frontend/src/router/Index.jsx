@@ -2,13 +2,12 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import Header from "../components/shared/Header";
 import Footer from "../components/shared/Footer";
-import Home from "../components/public/Home";
-import Login from "../components/auth/Login";
-import Register from "../components/auth/Register";
 import AdminRoute from "../router/AdminRoute";
+import RegisteredRoute from "../router/RegisteredRoute";
 import AdminPage from "../pages/AdminPage";
-import UserList from "../components/admin/users/UserList";
-import ProductList from "../components/admin/products/ProductList";
+import RegisteredPage from "../pages/RegisteredPage";
+import Unauthorized from "../pages/Unauthorized";
+import { publicRoutes, adminRoutes, registeredRoutes } from "./Routes";
 
 const AppRoutes = () => {
     return (
@@ -16,16 +15,27 @@ const AppRoutes = () => {
             <Header />
             <div className="content">
                 <Routes>
-                    <Route path="/" element={<Home />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
+                    {publicRoutes.map(({ path, element }) => (
+                        <Route key={path} path={path} element={element} />
+                    ))}
 
                     <Route path="/admin/*" element={<AdminRoute />}>
                         <Route path="" element={<AdminPage />}>
-                            <Route path="products" element={<ProductList />} />
-                            <Route path="users" element={<UserList />} />
+                            {adminRoutes.map(({ path, element }) => (
+                                <Route key={path} path={path} element={element} />
+                            ))}
                         </Route>
                     </Route>
+
+                    <Route path="/user/*" element={<RegisteredRoute />}>
+                        <Route path="" element={<RegisteredPage />}>
+                            {registeredRoutes.map(({ path, element }) => (
+                                <Route key={path} path={path} element={element} />
+                            ))}
+                        </Route>
+                    </Route>
+
+                    <Route path="/unauthorized" element={<Unauthorized />} />
                 </Routes>
             </div>
             <Footer />

@@ -1,46 +1,54 @@
-import React, { useEffect, useState } from "react";
-import { useProduct } from "../../../contexts/ProductContext";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { translate } from "../../../utils/Translate";
+import { useProduct } from "../../../hooks/UseProduct";
 import Table from "../../shared/Table";
 import CellDate from "../../shared/CellDate";
 import ProductFilters from "./filter/ProductFilters";
 import FilterBar from "../../shared/FilterBar";
 import Modal from "../../shared/Modal";
-import ProductForm from "./form/ProductForm"
+import ProductForm from "./form/ProductForm";
+import LoadingSpinner from "../../shared/LoadingSpinner";
 
 const ProductList = () => {
-    const { loadProducts, updateProductById, addProduct, deleteProductById, isLoading, totalProducts } = useProduct();
-
+    const productsPerPage = 10;
+    const [searchParams, setSearchParams] = useSearchParams();
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showFiltersModal, setShowFiltersModal] = useState(false);
-    const [filteredProducts, setFilteredProducts] = useState([]);
-    const [currentPage, setCurrentPage] = useState(0);
-    const productsPerPage = 10;
-    const [filters, setFilters] = useState({
-        name: "",
-        category: "",
-        minPrice: "",
-        maxPrice: "",
-        stock: "",
-        brand: "",
-        model: "",
-        startDate: "",
-        endDate: "",
-    });
+
+    const filters = useMemo(() => ({
+        search: searchParams.get("search") || "",
+        category: searchParams.get("category") || "",
+        brand: searchParams.get("brand") || "",
+        minPrice: searchParams.get("minPrice") || "",
+        maxPrice: searchParams.get("maxPrice") || "",
+        startDate: searchParams.get("startDate") || "",
+        endDate: searchParams.get("endDate") || "",
+        page: parseInt(searchParams.get("page") || "1", 10),
+        size: parseInt(searchParams.get("size") || productsPerPage.toString(), 10),
+        sortField: searchParams.get("sortField") || "id",
+        sortOrder: searchParams.get("sortOrder") || "asc",
+    }), [searchParams]);
+
+    const {
+        products,
+        totalProducts,
+        isLoading,
+        createProduct,
+        updateProduct,
+        deleteProduct,
+        refetchProducts,
+        handleSort,
+        sortField,
+        sortOrder,
+        handlePageChange,
+        currentPage
+    } = useProduct(filters);
 
     useEffect(() => {
-        const fetchProducts = async () => {
-            try {
-                const response = await loadProducts(filters, currentPage, productsPerPage);
-                if (response?.products) {
-                    setFilteredProducts(response.products);
-                }
-            } catch (error) {
-                console.error("❌ Error al cargar productos:", error);
-            }
-        };
-        fetchProducts();
-    }, [currentPage, productsPerPage, filters]);
+        refetchProducts(filters);
+    }, [filters, refetchProducts]);
 
     const openModal = (product = null) => {
         setSelectedProduct(product);
@@ -54,82 +62,134 @@ const ProductList = () => {
 
     const handleSave = async (formData, productId) => {
         try {
-            if (productId) {
-                await updateProductById(productId, formData);
-            } else {
-                await addProduct(formData);
-            }
+            let response = productId
+                ? await updateProduct({ id: productId, productData: formData })
+                : await createProduct(formData);
+
             closeModal();
-            setCurrentPage(0);
+            refetchProducts();
+            return response;
         } catch (error) {
-            console.error("❌ Hubo un error al guardar el producto.");
+            console.error("❌ Error al guardar producto:", error);
         }
     };
 
     const handleDelete = async (product) => {
-        if (!window.confirm(`¿Seguro que quieres eliminar el producto ${product.name}?`)) return;
+        if (!window.confirm(translate("admin.product.list.confirmDelete", { name: product.name }))) return;
         try {
-            await deleteProductById(product.id);
-            setCurrentPage(0);
+            await deleteProduct(product.id);
+            setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), page: "1" }));
         } catch (error) {
-            console.error("❌ No se pudo eliminar el producto.");
+            console.error("❌ Error al eliminar producto:", error);
         }
+    };
+
+    const handleSortWrapper = (field) => {
+        const newOrder = filters.sortField === field && filters.sortOrder === "asc" ? "desc" : "asc";
+        setSearchParams(prevParams => ({
+            ...Object.fromEntries(prevParams.entries()),
+            sortField: field,
+            sortOrder: newOrder,
+            page: "1",
+        }));
+
+        handleSort(field);
+    };
+
+    const handleApplyFilters = (newFilters) => {
+        setSearchParams({
+            search: newFilters.search || "",
+            category: newFilters.category || "",
+            brand: newFilters.brand || "",
+            minPrice: newFilters.minPrice || "",
+            maxPrice: newFilters.maxPrice || "",
+            startDate: newFilters.startDate || "",
+            endDate: newFilters.endDate || "",
+            page: "1",
+            size: productsPerPage.toString(),
+            sortField: filters.sortField,
+            sortOrder: filters.sortOrder,
+        });
+        setShowFiltersModal(false);
+    };
+
+    const handleClearFilters = () => {
+        setSearchParams({ page: "1", size: productsPerPage.toString(), sortField: "id", sortOrder: "asc" });
     };
 
     return (
         <div className="container mt-4">
             <FilterBar
-                onSearch={(term) => setFilters((prev) => ({ ...prev, name: term }))}
+                onSearch={(term) => setSearchParams({ ...filters, search: term })}
                 onOpenFilters={() => setShowFiltersModal(true)}
-                onCreate={openModal}
+                onCreate={() => openModal()}
             />
 
-            {!isLoading && filteredProducts.length > 0 ? (
+            <div className="mb-3">
+                {filters.search && <span className="badge bg-info me-2">🔍 {filters.search}</span>}
+                {filters.category && <span className="badge bg-warning me-2">🏷 {filters.category}</span>}
+                {filters.brand && <span className="badge bg-primary me-2">🏭 {filters.brand}</span>}
+                {filters.minPrice && <span className="badge bg-success me-2">💰 Min: {filters.minPrice}</span>}
+                {filters.maxPrice && <span className="badge bg-danger me-2">💰 Max: {filters.maxPrice}</span>}
+            </div>
+
+            {isLoading ? (
+                <div className="text-center mt-5">
+                    <LoadingSpinner size="medium" color="#007BFF" />
+                </div>
+            ) : products.length > 0 ? (
                 <Table
+                    title={translate("admin.product.list.productList")}
                     columns={[
-                        { label: "ID", field: "id" },
-                        { label: "Nombre", field: "name" },
-                        { label: "Categoría", field: "category" },
-                        { label: "Precio", field: "price", format: (value) => `$${value.toFixed(2)}` },
-                        { label: "Stock", field: "stock" },
-                        { label: "Marca", field: "brand" },
-                        { label: "Modelo", field: "model" },
-                        { label: "Imagen", field: (row) =>
-                            row.imageUrl ? (
-                                <img src={row.imageUrl} alt={row.name} className="product-img" />
-                            ) : (
-                                "Sin imagen"
-                            )
+                        { label: translate("admin.product.list.id"), field: "id" },
+                        { label: translate("admin.product.list.name"), field: "name" },
+                        { label: translate("admin.product.list.category"), field: "category" },
+                        { label: translate("admin.product.list.brand"), field: "brand" },
+                        { label: translate("admin.product.list.price"), field: "price" },
+                        { label: translate("admin.product.list.stock"), field: "stock" },
+                        {
+                            label: translate("admin.product.list.createdAt"),
+                            field: "createdAt",
+                            render: (row) => <CellDate value={row.createdAt} />,
                         },
-                        { label: "Creado", field: (row) => <CellDate value={row.createdAt} /> },
                     ]}
-                    data={filteredProducts}
+                    data={products}
                     actions={[
-                        { label: "✏️ Editar", type: "warning", handler: openModal },
-                        { label: "🗑️ Eliminar", type: "danger", handler: handleDelete },
+                        { label: `✏️ ${translate("admin.product.list.edit")}`, type: "primary", handler: openModal },
+                        { label: `🗑️ ${translate("admin.product.list.delete")}`, type: "danger", handler: handleDelete },
                     ]}
+                    hiddenColumnsBreakpoints={{
+                        xs: [translate("admin.product.list.brand"), translate("admin.product.list.price"), translate("admin.product.list.stock")],
+                        sm: [translate("admin.product.list.price"), translate("admin.product.list.stock")],
+                        md: [translate("admin.product.list.stock")],
+                        lg: []
+                    }}
+                    onSort={handleSortWrapper}
+                    sortField={sortField}
+                    sortOrder={sortOrder}
                     currentPage={currentPage}
-                    itemsPerPage={productsPerPage}
-                    totalItems={totalProducts}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
+                    totalPages={Math.ceil(totalProducts / filters.size)}
                 />
             ) : (
-                <p className="text-center mt-4">No se encontraron productos.</p>
+                <p className="text-center mt-4">{translate("admin.product.list.noProductsFound")}</p>
             )}
 
             {showFiltersModal && (
                 <ProductFilters
                     show={showFiltersModal}
                     onClose={() => setShowFiltersModal(false)}
-                    onApplyFilters={setFilters}
+                    onApplyFilters={handleApplyFilters}
+                    onResetFilters={handleClearFilters}
                 />
             )}
-
-            {showModal && (
-                <Modal title={selectedProduct ? "Editar Producto" : "Crear Producto"} onClose={closeModal}>
-                    <ProductForm product={selectedProduct} onSave={handleSave} />
-                </Modal>
-            )}
+            <Modal
+                title={selectedProduct ? translate("admin.product.list.editProduct") : translate("admin.product.list.createProduct")}
+                open={showModal}
+                onClose={closeModal}
+            >
+                <ProductForm product={selectedProduct} onSave={handleSave} setShowModal={setShowModal} />
+            </Modal>
         </div>
     );
 };

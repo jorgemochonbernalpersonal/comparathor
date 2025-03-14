@@ -1,31 +1,41 @@
-import React, { useEffect, useState } from "react";
-import { useRole } from "../../../contexts/RoleContext";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { translate } from "../../../utils/Translate";
+import { useRole } from "../../../hooks/UseRole";
 import Table from "../../shared/Table";
+import CellDate from "../../shared/CellDate";
 import FilterBar from "../../shared/FilterBar";
+import RoleFilters from "./filter/RolesFilter";
 import Modal from "../../shared/Modal";
-import RoleForm from "./RoleForm";
+import RoleForm from "./form/RoleForm";
+import LoadingSpinner from "../../shared/LoadingSpinner";
 
 const RoleList = () => {
-    const { loadRoles, updateRoleById, addRole, deleteRoleById, isLoading } = useRole();
-
+    const [searchParams, setSearchParams] = useSearchParams();
     const [selectedRole, setSelectedRole] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [filteredRoles, setFilteredRoles] = useState([]);
-    const [filters, setFilters] = useState({ roleName: "" });
+    const [showFiltersModal, setShowFiltersModal] = useState(false);
+
+    const filters = useMemo(() => ({
+        search: searchParams.get("search") || "",
+        startDate: searchParams.get("startDate") || "",
+        endDate: searchParams.get("endDate") || "",
+        updatedStartDate: searchParams.get("updatedStartDate") || "",
+        updatedEndDate: searchParams.get("updatedEndDate") || "",
+        roleCreatedBy: searchParams.get("roleCreatedBy") || "",
+        sortField: searchParams.get("sortField") || "createdAt",
+        sortOrder: searchParams.get("sortOrder") || "desc",
+    }), [searchParams]);
+
+    const {
+        roles, isLoading, error, refetchRoles,
+        addRole, updateRole, deleteRole,
+        sortField, sortOrder, handleSort
+    } = useRole(filters);
 
     useEffect(() => {
-        const fetchRoles = async () => {
-            try {
-                const response = await loadRoles(filters);
-                if (response?.roles) {
-                    setFilteredRoles(response.roles);
-                }
-            } catch (error) {
-                console.error("❌ Error al cargar roles:", error);
-            }
-        };
-        fetchRoles();
-    }, [filters, loadRoles]);
+        refetchRoles();
+    }, [filters, refetchRoles]);
 
     const openModal = (role = null) => {
         setSelectedRole(role);
@@ -39,11 +49,11 @@ const RoleList = () => {
 
     const handleSave = async (formData, roleId) => {
         try {
-            if (roleId) {
-                await updateRoleById(roleId, formData);
-            } else {
-                await addRole(formData);
-            }
+            roleId
+                ? await updateRole({ roleId, updatedData: formData })
+                : await addRole(formData);
+
+            refetchRoles();
             closeModal();
         } catch (error) {
             console.error("❌ Error al guardar el rol:", error);
@@ -51,44 +61,112 @@ const RoleList = () => {
     };
 
     const handleDelete = async (role) => {
-        if (!window.confirm(`¿Seguro que quieres eliminar el rol ${role.name}?`)) return;
-
+        if (!window.confirm(translate("admin.role.list.confirmDelete", { name: role.name }))) return;
         try {
-            await deleteRoleById(role.id);
+            await deleteRole(role.id);
+            refetchRoles();
         } catch (error) {
             console.error("❌ Error al eliminar el rol:", error);
         }
     };
 
+    const handleSortWrapper = (field) => {
+        const newOrder = sortField === field && sortOrder === "asc" ? "desc" : "asc";
+        setSearchParams(prevParams => ({
+            ...Object.fromEntries(prevParams.entries()),
+            sortField: field,
+            sortOrder: newOrder,
+        }));
+
+        handleSort(field);
+    };
+
+    const handleApplyFilters = (newFilters) => { 
+        setSearchParams({
+            search: newFilters.search || "",
+            startDate: newFilters.startDate || "",
+            endDate: newFilters.endDate || "",
+            updatedStartDate: newFilters.updatedStartDate || "",
+            updatedEndDate: newFilters.updatedEndDate || "",
+            roleCreatedBy: newFilters.roleCreatedBy || "",
+            sortField: filters.sortField,
+            sortOrder: filters.sortOrder,
+        });
+        setShowFiltersModal(false);
+    };
+
     return (
         <div className="container mt-4">
             <FilterBar
-                onSearch={(term) => setFilters((prev) => ({ ...prev, roleName: term }))}
-                onCreate={openModal}
+                onSearch={(term) => setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), search: term }))}
+                onOpenFilters={() => setShowFiltersModal(true)}
+                onCreate={() => openModal()}
             />
 
-            {!isLoading && filteredRoles.length > 0 ? (
+            <div className="mb-3">
+                {filters.search && <span className="badge bg-info me-2">🔍 {filters.search}</span>}
+                {filters.startDate && <span className="badge bg-warning me-2">📅 {filters.startDate}</span>}
+                {filters.endDate && <span className="badge bg-warning me-2">📅 {filters.endDate}</span>}
+                {filters.roleCreatedBy && <span className="badge bg-primary me-2">👤 {filters.roleCreatedBy}</span>}
+            </div>
+
+            {isLoading ? (
+                <div className="text-center mt-5">
+                    <LoadingSpinner size="medium" color="#007BFF" />
+                </div>
+            ) : roles.length > 0 ? (
                 <Table
+                    title={translate("admin.role.list.roleList")}
                     columns={[
-                        { label: "ID", field: "id" },
-                        { label: "Nombre del Rol", field: "name" },
-                        { label: "Descripción", field: "description" },
+                        { label: translate("admin.role.list.name"), field: "name" },
+                        { label: translate("admin.role.list.description"), field: "description" },
+                        {
+                            label: translate("admin.role.list.createdAt"),
+                            field: "createdAt",
+                            render: (row) => <CellDate value={row.createdAt} />,
+                        },
+                        {
+                            label: translate("admin.role.list.updatedAt"),
+                            field: "updatedAt",
+                            render: (row) => <CellDate value={row.updatedAt} />,
+                        },
+                        {
+                            label: translate("admin.role.list.createdBy"),
+                            field: "roleCreatedBy",
+                        },
                     ]}
-                    data={filteredRoles}
+                    data={roles}
                     actions={[
-                        { label: "✏️ Editar", type: "warning", handler: openModal },
-                        { label: "🗑️ Eliminar", type: "danger", handler: handleDelete },
+                        { label: `✏️ ${translate("admin.role.list.edit")}`, type: "primary", handler: openModal },
+                        { label: `🗑️ ${translate("admin.role.list.delete")}`, type: "danger", handler: handleDelete },
                     ]}
+                    hiddenColumnsBreakpoints={{
+                        xs: [translate("admin.role.list.updatedAt")],
+                        sm: [translate("admin.role.list.updatedAt")],
+                        md: [translate("admin.role.list.updatedAt")],
+                        lg: [],
+                    }}
+                    onSort={handleSortWrapper}
+                    sortField={sortField}
+                    sortOrder={sortOrder}
                 />
             ) : (
-                <p className="text-center mt-4">No se encontraron roles.</p>
+                <p className="text-center mt-4">{translate("admin.role.list.noRolesFound")}</p>
             )}
 
-            {showModal && (
-                <Modal title={selectedRole ? "Editar Rol" : "Crear Rol"} onClose={closeModal}>
-                    <RoleForm role={selectedRole} onSave={handleSave} />
-                </Modal>
-            )}
+            <RoleFilters
+                open={showFiltersModal}
+                onClose={() => setShowFiltersModal(false)}
+                onApplyFilters={handleApplyFilters}
+            />
+
+            <Modal
+                title={selectedRole ? translate("admin.role.list.editRole") : translate("admin.role.list.createRole")}
+                open={showModal}
+                onClose={closeModal}
+            >
+                <RoleForm role={selectedRole} onSave={handleSave} setShowModal={setShowModal} />
+            </Modal>
         </div>
     );
 };

@@ -1,110 +1,111 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-    FaHome,
-    FaSignInAlt,
-    FaUserPlus,
-    FaUser,
-    FaPowerOff,
-    FaCog
-} from "react-icons/fa";
-import { useAuth } from "../../contexts/AuthContext";
-import { useRole } from "../../hooks/UseRole";
-import "../../styles/Header.css";
+import { AppBar, Toolbar, IconButton, Typography, Button, Menu, MenuItem, Box } from "@mui/material";
+import { Home, Login, PersonAdd, AccountCircle, Logout, AdminPanelSettings, Settings } from "@mui/icons-material";
+import { useAuth } from "../../hooks/UseAuth";
+import { translate } from "../../utils/Translate";
 
 const Header = () => {
-    const { currentUser, logout } = useAuth();
-    const { hasRole } = useRole();
-    const userName = useMemo(() => currentUser?.name || "Usuario", [currentUser]);
+    const { currentUser, logout, hasRole } = useAuth();
     const location = useLocation();
+    const [user, setUser] = useState(currentUser);
+    const [anchorEl, setAnchorEl] = useState(null);
+
+    useEffect(() => {
+        setUser(currentUser);
+    }, [currentUser]);
+
+    const handleLogout = async () => {
+        await logout();
+        window.location.reload();
+    };
+
+    const handleMenuOpen = (event) => {
+        setAnchorEl(event.currentTarget);
+    };
+
+    const handleMenuClose = () => {
+        setAnchorEl(null);
+    };
 
     return (
-        <nav className="navbar navbar-expand-lg navbar-dark custom-navbar">
-            <div className="container">
-                <Link className="navbar-brand fw-bold d-flex align-items-center" to="/">
-                    Comparathor <span className="robot-icon">⚡</span>
-                </Link>
+        <AppBar position="static" sx={{ bgcolor: (theme) => theme.palette.grey[900], color: "white" }}>
+            <Toolbar>
+                <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                    <Link to="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center" }}>
+                        Comparathor ⚡
+                    </Link>
+                </Typography>
 
-                <button
-                    className="navbar-toggler custom-toggler"
-                    type="button"
-                    data-bs-toggle="collapse"
-                    data-bs-target="#navbarNav"
-                    aria-controls="navbarNav"
-                    aria-expanded="false"
-                    aria-label="Toggle navigation"
-                >
-                    <span className="navbar-toggler-icon"></span>
-                </button>
-
-                <div className="collapse navbar-collapse fade-in" id="navbarNav">
-                    <ul className="navbar-nav ms-auto gap-3">
-                        {!currentUser && (
-                            <li className="nav-item">
-                                <Link
-                                    className={`nav-link custom-link ${location.pathname === "/" ? "active-link" : ""}`}
-                                    to="/"
-                                >
-                                    <FaHome className="me-2" /> Inicio
-                                </Link>
-                            </li>
+                {!user ? (
+                    <>
+                        <Button
+                            component={Link}
+                            to="/"
+                            color="inherit"
+                            startIcon={<Home />}
+                            className={location.pathname === "/" ? "active" : ""}
+                        >
+                            {translate("shared.header.home")}
+                        </Button>
+                        <Button
+                            component={Link}
+                            to="/login"
+                            color="inherit"
+                            startIcon={<Login />}
+                            className={location.pathname === "/login" ? "active" : ""}
+                        >
+                            {translate("shared.header.login")}
+                        </Button>
+                        <Button
+                            component={Link}
+                            to="/register"
+                            color="inherit"
+                            startIcon={<PersonAdd />}
+                            className={location.pathname === "/register" ? "active" : ""}
+                        >
+                            {translate("shared.header.register")}
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        {hasRole("ROLE_ADMIN") && (
+                            <Button
+                                component={Link}
+                                to="/admin"
+                                color="inherit"
+                                startIcon={<AdminPanelSettings />}
+                                className={location.pathname.startsWith("/admin") ? "active" : ""}
+                            >
+                                {translate("shared.header.adminPanel")}
+                            </Button>
                         )}
-
-                        {currentUser ? (
-                            <>
-                                {hasRole("ROLE_ADMIN") && (
-                                    <li className="nav-item">
-                                        <Link
-                                            className={`nav-link custom-link ${location.pathname.startsWith("/admin") ? "active-link" : ""}`}
-                                            to="/admin"
-                                        >
-                                            <FaCog className="me-2" /> Panel Admin
-                                        </Link>
-                                    </li>
-                                )}
-
-                                <li className="nav-item">
-                                    <Link
-                                        className={`nav-link custom-link ${location.pathname === "/dashboard" ? "active-link" : ""}`}
-                                        to="/dashboard"
-                                    >
-                                        <FaUser className="me-2" /> {userName}
-                                    </Link>
-                                </li>
-                                <li className="nav-item">
-                                    <button
-                                        className="nav-link btn btn-link custom-logout"
-                                        onClick={logout}
-                                        style={{ cursor: "pointer" }}
-                                    >
-                                        <FaPowerOff className="me-2" /> Cerrar Sesión
-                                    </button>
-                                </li>
-                            </>
-                        ) : (
-                            <>
-                                <li className="nav-item">
-                                    <Link
-                                        className={`nav-link custom-link ${location.pathname === "/login" ? "active-link" : ""}`}
-                                        to="/login"
-                                    >
-                                        <FaSignInAlt className="me-2" /> Iniciar Sesión
-                                    </Link>
-                                </li>
-                                <li className="nav-item">
-                                    <Link
-                                        className={`nav-link custom-link ${location.pathname === "/register" ? "active-link" : ""}`}
-                                        to="/register"
-                                    >
-                                        <FaUserPlus className="me-2" /> Registrarse
-                                    </Link>
-                                </li>
-                            </>
+                        {hasRole("ROLE_REGISTERED") && (
+                            <Button
+                                component={Link}
+                                to="/user"
+                                color="inherit"
+                                startIcon={<Settings />}
+                                className={location.pathname.startsWith("/user") ? "active" : ""}
+                            >
+                                {translate("shared.header.userPanel")}
+                            </Button>
                         )}
-                    </ul>
-                </div>
-            </div>
-        </nav>
+                        <IconButton color="inherit" onClick={handleMenuOpen}>
+                            <AccountCircle />
+                        </IconButton>
+                        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose}>
+                            <MenuItem onClick={handleMenuClose} component={Link} to="/dashboard">
+                                {user?.name}
+                            </MenuItem>
+                            <MenuItem onClick={handleLogout}>
+                                <Logout sx={{ marginRight: 1 }} /> {translate("shared.header.logout")}
+                            </MenuItem>
+                        </Menu>
+                    </>
+                )}
+            </Toolbar>
+        </AppBar>
     );
 };
 

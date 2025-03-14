@@ -18,14 +18,4 @@ public class Comparison {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<Long> productIds;
-
-    public Comparison(Long id, String title, String description, Long userId) {
-        this.id = id;
-        this.title = title;
-        this.description = description;
-        this.userId = userId;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-        this.productIds = List.of();
-    }
 }

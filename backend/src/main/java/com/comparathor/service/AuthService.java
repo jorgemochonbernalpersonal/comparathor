@@ -11,6 +11,7 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -71,13 +72,11 @@ public class AuthService {
         if (!userRefreshTokens.containsValue(refreshToken)) {
             throw new UnauthorizedException("❌ Refresh token no válido o expirado.");
         }
-
         Long userId = userRefreshTokens.entrySet().stream()
                 .filter(entry -> entry.getValue().equals(refreshToken))
                 .map(Map.Entry::getKey)
                 .findFirst()
                 .orElse(null);
-
         if (userId != null) {
             userRefreshTokens.remove(userId);
         }
@@ -87,13 +86,11 @@ public class AuthService {
     public Map<String, Object> loginUserAndAuthenticate(String email, String password) {
         User user = userRepository.findByEmail(email);
         if (user == null || !BCrypt.checkpw(password, user.getPassword())) {
-            throw new UnauthorizedException("❌ Credenciales incorrectas");
+            throw new BadRequestException("❌ Credenciales incorrectas");
         }
-
         String accessToken = generateAccessToken(user);
         String refreshToken = generateRefreshToken(user);
         userRefreshTokens.put(user.getId(), refreshToken);
-
         Map<String, Object> response = new HashMap<>();
         response.put("accessToken", accessToken);
         response.put("refreshToken", refreshToken);
@@ -102,31 +99,29 @@ public class AuthService {
     }
 
     @Transactional
-    public Map<String, Object> registerUserAndAuthenticate(String username, String email, String password, String roleName) {
+    public Map<String, Object> registerUserAndAuthenticate(String username, String email, String password, Long roleId) {
         if (userRepository.findByEmail(email) != null) {
             throw new BadRequestException("El usuario con el email " + email + " ya está registrado.");
         }
-
         User user = new User();
         user.setName(username);
         user.setEmail(email);
         user.setPassword(BCrypt.hashpw(password, BCrypt.gensalt()));
-
-        roleName = (roleName != null) ? roleName : "ROLE_REGISTERED";
-        Optional<Role> optionalRole = roleRepository.findByName(roleName);
-
+        LocalDateTime now = LocalDateTime.now();
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
+        roleId = (roleId != null) ? roleId : 2L;
+        Optional<Role> optionalRole = roleRepository.findById(2L);
         if (optionalRole.isEmpty()) {
-            throw new RuntimeException("❌ Error: El rol '" + roleName + "' no existe en la base de datos.");
+            throw new RuntimeException("❌ Error: El rol con ID '" + roleId + "' no existe en la base de datos.");
         }
-
-        user.setRole(optionalRole.get());
-
+        Role role = optionalRole.get();
+        user.setRole(role);
+        user.setRoleId(role.getId());
         userRepository.save(user);
-
         String accessToken = generateAccessToken(user);
         String refreshToken = generateRefreshToken(user);
         userRefreshTokens.put(user.getId(), refreshToken);
-
         Map<String, Object> response = new HashMap<>();
         response.put("accessToken", accessToken);
         response.put("refreshToken", refreshToken);

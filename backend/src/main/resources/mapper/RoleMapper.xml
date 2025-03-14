@@ -4,34 +4,133 @@
 
 <mapper namespace="com.comparathor.repository.RoleRepository">
 
-    <select id="findAll" resultType="com.comparathor.model.Role">
-        SELECT id, name, description FROM roles
+    <!-- 🔹 Mapeo de resultados para Role -->
+    <resultMap id="RoleResultMap" type="com.comparathor.model.Role">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="roleCreatedBy" column="role_created_by"/>
+    </resultMap>
+
+    <!-- 🔹 Buscar roles con filtros -->
+    <select id="findFilteredRoles" resultMap="RoleResultMap">
+        SELECT r.id, r.name, r.description, r.created_at, r.updated_at, r.role_created_by
+        FROM roles r
+        WHERE 1=1
+
+        <if test="roleName != null and roleName != ''">
+            AND LOWER(r.name) LIKE LOWER(CONCAT('%', #{roleName}, '%'))
+        </if>
+
+        <if test="startDate != null">
+            AND r.created_at >= #{startDate}
+        </if>
+
+        <if test="endDate != null">
+            AND r.created_at &lt;= #{endDate}
+        </if>
+
+        <if test="roleCreatedBy != null and roleCreatedBy != ''">
+            AND r.role_created_by = #{roleCreatedBy}
+        </if>
+
+        <if test="searchTerm != null and searchTerm != ''">
+            AND (
+            LOWER(r.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(r.description) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(r.role_created_by) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            )
+        </if>
+
+        <if test="sortField != null and sortOrder != null">
+            ORDER BY
+            <choose>
+                <when test="sortField == 'name'"> r.name </when>
+                <when test="sortField == 'description'"> r.description </when>
+                <when test="sortField == 'createdAt'"> r.created_at </when>
+                <when test="sortField == 'updatedAt'"> r.updated_at </when>
+                <otherwise> r.created_at </otherwise>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'asc'"> ASC </when>
+                <otherwise> DESC </otherwise>
+            </choose>
+        </if>
     </select>
 
-    <select id="findById" resultType="com.comparathor.model.Role">
-        SELECT id, name, description FROM roles WHERE id = #{id}
+    <!-- 🔢 Contar roles filtrados -->
+    <select id="countFilteredRoles" resultType="int">
+        SELECT COUNT(*) FROM roles r
+        WHERE 1=1
+
+        <if test="roleName != null and roleName != ''">
+            AND LOWER(r.name) LIKE LOWER(CONCAT('%', #{roleName}, '%'))
+        </if>
+
+        <if test="startDate != null">
+            AND r.created_at >= #{startDate}
+        </if>
+
+        <if test="endDate != null">
+            AND r.created_at &lt;= #{endDate}
+        </if>
+
+        <if test="roleCreatedBy != null and roleCreatedBy != ''">
+            AND r.role_created_by = #{roleCreatedBy}
+        </if>
+
+        <if test="searchTerm != null and searchTerm != ''">
+            AND (
+            LOWER(r.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(r.description) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            OR LOWER(r.role_created_by) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
+            )
+        </if>
     </select>
 
-    <select id="findByName" resultType="com.comparathor.model.Role">
-        SELECT id, name, description FROM roles WHERE name = #{name}
+    <!-- 🔍 Buscar un rol por ID -->
+    <select id="findById" resultMap="RoleResultMap">
+        SELECT id, name, description, created_at, updated_at, role_created_by
+        FROM roles WHERE id = #{id}
     </select>
 
-    <select id="findByNames" resultType="com.comparathor.model.Role">
-        SELECT id, name, description FROM roles
-        WHERE name IN
-        <foreach collection="names" item="name" open="(" separator="," close=")">
-            #{name}
-        </foreach>
+    <!-- 🔍 Buscar un rol por nombre -->
+    <select id="findByName" resultMap="RoleResultMap">
+        SELECT id, name, description, created_at, updated_at, role_created_by
+        FROM roles WHERE name = #{name}
     </select>
 
-    <select id="existsByName" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM roles WHERE name = #{name}
+    <!-- 🔍 Verificar si un rol con un ID específico existe -->
+    <select id="existsById" resultType="int">
+        SELECT COUNT(*) FROM roles WHERE id = #{id}
     </select>
 
-    <insert id="save" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO roles (name, description) VALUES (#{name}, #{description})
+    <!--Verificar si un rol con un nombre específico existe -->
+    <select id="existsByName" resultType="int">
+        SELECT COUNT(*) FROM roles WHERE name = #{name}
+    </select>
+
+    <!--Crear rol-->
+    <insert id="save" keyProperty="id" keyColumn="id" parameterType="com.comparathor.model.Role">
+        INSERT INTO roles (name, description, created_at, updated_at, role_created_by)
+        VALUES (#{name}, #{description}, #{createdAt}, #{updatedAt}, #{roleCreatedBy})
+            RETURNING id;
     </insert>
 
+    <!--Actualizar un rol existente -->
+    <update id="updateRole">
+        UPDATE roles
+        SET name = #{name},
+        description = #{description},
+        updated_at = #{updatedAt},
+        role_created_by = #{roleCreatedBy}
+        WHERE id = #{id}
+    </update>
+
+
+    <!-- 🔹 Eliminar un rol por ID -->
     <delete id="deleteById">
         DELETE FROM roles WHERE id = #{id}
     </delete>

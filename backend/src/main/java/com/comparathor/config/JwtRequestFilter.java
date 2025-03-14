@@ -43,6 +43,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
+        // Rutas públicas que no requieren autenticación
         List<String> publicRoutes = List.of(
                 "/api/auth/register",
                 "/api/auth/login"
@@ -54,6 +55,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
+        // 🔥 Evitar bucles infinitos en /refresh-token
+        if (requestURI.equalsIgnoreCase("/api/auth/refresh-token")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         if (token == null || !token.startsWith("Bearer ")) {
             logger.warn("🚨 Token no proporcionado o mal formado para la ruta: {}", requestURI);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -61,7 +68,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             return;
         }
 
-        token = token.substring(7);
+        token = token.substring(7); // Remover "Bearer "
 
         try {
             String username = jwtUtil.extractUsername(token);
@@ -69,6 +76,7 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
             if (username == null || roles == null || roles.isEmpty() || !jwtUtil.validateToken(token, username)) {
                 logger.warn("❌ Token inválido o expirado para el usuario: {}", username);
+
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token inválido o expirado");
                 return;
@@ -81,8 +89,11 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         } catch (Exception e) {
             logger.error("❌ Error en la validación del token: {}", e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token inválido o expirado");
+
+            if (!requestURI.equalsIgnoreCase("/api/auth/refresh-token")) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("Token inválido o expirado");
+            }
         }
     }
 }

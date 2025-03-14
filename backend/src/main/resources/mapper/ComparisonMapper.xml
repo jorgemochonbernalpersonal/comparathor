@@ -4,45 +4,109 @@
 
 <mapper namespace="com.comparathor.repository.ComparisonRepository">
 
-    <!-- Insertar una nueva comparación -->
-    <insert id="insertComparison" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO comparisons (title, description, user_id, created_at, updated_at)
-        VALUES (#{title}, #{description}, #{userId}, NOW(), NOW())
-    </insert>
+    <resultMap id="ComparisonResultMap" type="com.comparathor.model.Comparison">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="description" column="description"/>
+        <result property="userId" column="user_id"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
 
-    <!-- Buscar una comparación por ID -->
-    <select id="findComparisonById" resultType="com.comparathor.model.Comparison">
+    <select id="findFilteredComparisons" resultMap="ComparisonResultMap">
+        SELECT DISTINCT c.id, c.title, c.description, c.user_id, c.created_at, c.updated_at
+        FROM comparisons c
+        LEFT JOIN comparison_products cp ON c.id = cp.comparison_id
+        LEFT JOIN products p ON cp.product_id = p.id
+        WHERE 1=1
+        <include refid="ComparisonFilterConditions"/>
+        <include refid="ProductFilterConditions"/>
+        <if test="sortField != null and sortOrder != null">
+            ORDER BY
+            <choose>
+                <when test="sortField == 'title'"> c.title </when>
+                <when test="sortField == 'createdAt'"> c.created_at </when>
+                <otherwise> c.created_at </otherwise>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'asc'"> ASC </when>
+                <otherwise> DESC </otherwise>
+            </choose>
+        </if>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="findById" parameterType="Long" resultMap="ComparisonResultMap">
         SELECT id, title, description, user_id, created_at, updated_at
         FROM comparisons
         WHERE id = #{id}
     </select>
 
-    <!-- Obtener todas las comparaciones -->
-    <select id="findAllComparisons" resultType="com.comparathor.model.Comparison">
-        SELECT id, title, description, user_id, created_at, updated_at
-        FROM comparisons
+    <select id="countFilteredComparisons" resultType="int">
+        SELECT COUNT(DISTINCT c.id)
+        FROM comparisons c
+        LEFT JOIN comparison_products cp ON c.id = cp.comparison_id
+        LEFT JOIN products p ON cp.product_id = p.id
+        WHERE 1=1
+        <include refid="ComparisonFilterConditions"/>
+        <include refid="ProductFilterConditions"/>
     </select>
 
-    <!-- Obtener comparaciones por usuario -->
-    <select id="findComparisonsByUserId" resultType="com.comparathor.model.Comparison">
-        SELECT id, title, description, user_id, created_at, updated_at
-        FROM comparisons
-        WHERE user_id = #{userId}
-    </select>
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO comparisons (title, description, user_id, created_at, updated_at)
+        VALUES (#{title}, #{description}, #{userId}, #{createdAt}, #{updatedAt})
+    </insert>
 
-    <!-- Verificar si una comparación existe por ID -->
-    <select id="existsById" resultType="int">
-        SELECT COUNT(*) FROM comparisons WHERE id = #{id}
-    </select>
+    <update id="updateComparison">
+        UPDATE comparisons
+        SET title = #{title},
+            description = #{description},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
 
-    <!-- Verificar si ya existe una comparación con la misma descripción para el usuario -->
-    <select id="existsByDescriptionAndUserId" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM comparisons WHERE description = #{description} AND user_id = #{userId}
-    </select>
-
-    <!-- Eliminar una comparación por ID -->
-    <delete id="deleteComparison">
+    <delete id="deleteById">
         DELETE FROM comparisons WHERE id = #{id}
     </delete>
+
+    <sql id="ComparisonFilterConditions">
+        <if test="userId != null">
+            AND c.user_id = #{userId}
+        </if>
+        <if test="title != null and title != ''">
+            AND LOWER(c.title) LIKE LOWER(CONCAT('%', #{title}, '%'))
+        </if>
+        <if test="startDate != null">
+            AND c.created_at >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND c.created_at &lt;= #{endDate}
+        </if>
+    </sql>
+
+    <sql id="ProductFilterConditions">
+        <if test="name != null and name != ''">
+            AND LOWER(p.name) LIKE LOWER(CONCAT('%', #{name}, '%'))
+        </if>
+        <if test="category != null and category != ''">
+            AND LOWER(p.category) LIKE LOWER(CONCAT('%', #{category}, '%'))
+        </if>
+        <if test="price != null">
+            AND p.price = #{price}
+        </if>
+        <if test="stock != null">
+            AND p.stock = #{stock}
+        </if>
+        <if test="brand != null and brand != ''">
+            AND LOWER(p.brand) LIKE LOWER(CONCAT('%', #{brand}, '%'))
+        </if>
+        <if test="model != null and model != ''">
+            AND LOWER(p.model) LIKE LOWER(CONCAT('%', #{model}, '%'))
+        </if>
+    </sql>
+
+    <select id="findProductIdsByComparisonId" resultType="long">
+        SELECT product_id FROM comparison_products WHERE comparison_id = #{comparisonId}
+    </select>
 
 </mapper>

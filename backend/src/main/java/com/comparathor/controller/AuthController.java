@@ -30,12 +30,10 @@ public class AuthController {
         if (!loginRequest.containsKey("email") || !loginRequest.containsKey("password")) {
             throw new BadRequestException("❌ Se requiere email y password.");
         }
-
         Map<String, Object> response = authService.loginUserAndAuthenticate(
                 loginRequest.get("email"),
                 loginRequest.get("password")
         );
-
         return ResponseEntity.ok(response);
     }
 
@@ -44,7 +42,6 @@ public class AuthController {
         if (!request.containsKey("refresh_token")) {
             throw new BadRequestException("❌ Debes proporcionar un refresh token.");
         }
-
         authService.logout(request.get("refresh_token"));
         Map<String, String> response = new HashMap<>();
         response.put("message", "Logout exitoso");
@@ -53,17 +50,16 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, String> request) {
-        if (!request.containsKey("username") || !request.containsKey("email") || !request.containsKey("password")) {
-            throw new BadRequestException("❌ Se requiere username, email y password.");
+        if (!request.containsKey("name") || !request.containsKey("email") || !request.containsKey("password")) {
+            throw new BadRequestException("❌ Se requiere name, email y password.");
         }
-
+        Long roleId = request.containsKey("roleId") ? Long.parseLong(request.get("roleId")) : 2L;
         Map<String, Object> response = authService.registerUserAndAuthenticate(
-                request.get("username"),
+                request.get("name"),
                 request.get("email"),
                 request.get("password"),
-                request.get("role")
+                roleId
         );
-
         return ResponseEntity.ok(response);
     }
 

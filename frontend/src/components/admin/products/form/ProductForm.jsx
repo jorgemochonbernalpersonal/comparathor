@@ -1,203 +1,130 @@
-import React, { useEffect, useState } from "react";
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import React, { useState } from "react";
 import * as Yup from "yup";
-import { useParams, useNavigate } from "react-router-dom";
-import { useProduct } from "../../../../contexts/ProductContext";
+import Form from "../../../shared/Form";
+import { translate } from "../../../../utils/Translate";
 
-const ProductForm = ({ onSave }) => {
-    const { products } = useProduct()
-    const { id } = useParams();
-    const navigate = useNavigate();
-    const [errorMessage, setErrorMessage] = useState("");
-    const [previewImages, setPreviewImages] = useState([]);
+const ProductForm = ({ product, onSave, setShowModal }) => {
+    const productId = product?.id || null;
+    const [errorMessage, setErrorMessage] = useState(null);
+    const [uploading, setUploading] = useState(false);
 
-    const [initialValues, setInitialValues] = useState({
-        category: "",
-        name: "",
-        description: "",
-
-        brand: "",
-        model: "",
-        price: "",
-        stock: 0,
-        image_url: "", 
-        is_public: false,
-        published_at: null,
+    const validationSchema = Yup.object().shape({
+        name: Yup.string().required(translate("admin.product.form.validation.name")),
+        category: Yup.string().required(translate("admin.product.form.validation.category")),
+        price: Yup.number().min(0, translate("admin.product.form.validation.priceMin")).required(translate("admin.product.form.validation.price")),
+        stock: Yup.number().min(0, translate("admin.product.form.validation.stockMin")).required(translate("admin.product.form.validation.stock")),
+        description: Yup.string().required(translate("admin.product.form.validation.description")),
+        brand: Yup.string().required(translate("admin.product.form.validation.brand")),
+        model: Yup.string().required(translate("admin.product.form.validation.model")),
+        image: Yup.mixed()
+            .nullable()
+            .when([], (value, schema) => {
+                return productId
+                    ? schema 
+                    : schema.required(translate("admin.product.form.validation.imageRequired"));
+            })
+            .test("fileType", "⚠️ Formato de imagen no válido", (value) => {
+                if (!value || typeof value === "string") return true; 
+                return value instanceof File && ["image/png", "image/jpeg", "image/jpg"].includes(value.type);
+            }),
     });
+    
 
-    useEffect(() => {
-        if (id) {
-            const existingProduct = products.find((p) => p.id === parseInt(id));
-            if (existingProduct) {
-                setInitialValues({
-                    category: existingProduct.category || "",
-                    name: existingProduct.name || "",
-                    description: existingProduct.description || "",
-                    brand: existingProduct.brand || "",
-                    model: existingProduct.model || "",
-                    price: existingProduct.price || "",
-                    stock: existingProduct.stock || 0,
-                    image_url: existingProduct.image_url || "",
-                    is_public: existingProduct.is_public || false,
-                    published_at: existingProduct.published_at || null,
-                });
+    const initialValues = {
+        name: product?.name || "",
+        category: product?.category || "",
+        price: product?.price || "",
+        stock: product?.stock || "",
+        description: product?.description || "",
+        brand: product?.brand || "",
+        model: product?.model || "",
+        image: product?.imageUrl || null, 
+    };
 
-                if (existingProduct.image_url) {
-                    setPreviewImages([existingProduct.image_url]);
-                }
-            }
-        }
-    }, [id, products]);
+    const handleImageChange = (event, setFieldValue) => {
+        const file = event.target.files[0];
 
-    const validationSchema = Yup.object({
-        category: Yup.string().required("La categoría es obligatoria"),
-        name: Yup.string().min(2, "Mínimo 2 caracteres").required("Nombre obligatorio"),
-        description: Yup.string().max(500, "Máximo 500 caracteres").notRequired(),
-        brand: Yup.string().notRequired(),
-        model: Yup.string().notRequired(),
-        price: Yup.number().positive("Debe ser un número positivo").required("Precio obligatorio"),
-        stock: Yup.number().integer("Debe ser un número entero").min(0, "Debe ser mayor o igual a 0"),
-        image_url: Yup.mixed().notRequired(),
-        is_public: Yup.boolean(),
-    });
-
-    const handleSubmit = async (values, { setSubmitting }) => {
-        setSubmitting(true);
-        setErrorMessage("");
-
-        try {
-            const formData = new FormData();
-            formData.append("category", values.category);
-            formData.append("name", values.name.trim());
-            formData.append("description", values.description?.trim() || "");
-            formData.append("brand", values.brand?.trim() || "");
-            formData.append("model", values.model?.trim() || "");
-            formData.append("price", parseFloat(values.price));
-            formData.append("stock", parseInt(values.stock));
-            formData.append("is_public", values.is_public);
-
-            // Si se publica, asignar la fecha actual
-            if (values.is_public) {
-                formData.append("published_at", new Date().toISOString());
-            } else {
-                formData.append("published_at", null);
-            }
-
-            if (values.image_url instanceof File) {
-                formData.append("image", values.image_url);
-            }
-
-            console.log("Datos enviados:", Object.fromEntries(formData.entries())); // 🔍 Debugging
-
-            await onSave(formData, id);
-            navigate("/admin/products");
-        } catch (error) {
-            setErrorMessage(error.message || "Error al procesar la solicitud.");
-        } finally {
-            setSubmitting(false);
+        if (file instanceof File) {
+            setFieldValue("image", file);
+        } else {
+            setFieldValue("image", product?.imageUrl || null); 
         }
     };
 
+    const handleSubmit = async (values, actions) => {
+        setErrorMessage(null);
+        actions.setSubmitting(true);
+        setUploading(true);
+    
+        try {
+            const formData = new FormData();
+    
+            const productData = {
+                name: values.name,
+                category: values.category,
+                price: values.price,
+                stock: values.stock,
+                description: values.description,
+                brand: values.brand,
+                model: values.model,
+            };
+    
+            formData.append("data", JSON.stringify(productData)); 
+
+            if (values.image instanceof File) {
+                formData.append("image", values.image);
+            } else if (typeof values.image === "string") {
+                formData.append("imageUrl", values.image);
+            }
+
+            const response = await onSave(formData, product?.id);
+            if (!response) throw new Error("❌ No se recibió respuesta del servidor.");
+    
+            setTimeout(() => {
+                if (typeof setShowModal === "function") {
+                    setShowModal(false);
+                }
+                actions.resetForm();
+            }, 500);
+        } catch (error) {
+            setErrorMessage(error.message);
+        } finally {
+            actions.setSubmitting(false);
+            setUploading(false);
+        }
+    };
+
+    const fields = [
+        { name: "name", label: translate("admin.product.form.name"), type: "text" },
+        { name: "category", label: translate("admin.product.form.category"), type: "text" },
+        { name: "price", label: translate("admin.product.form.price"), type: "number", step: "0.01" },
+        { name: "stock", label: translate("admin.product.form.stock"), type: "number" },
+        { name: "description", label: translate("admin.product.form.description"), type: "textarea" },
+        { name: "brand", label: translate("admin.product.form.brand"), type: "text" },
+        { name: "model", label: translate("admin.product.form.model"), type: "text" },
+        {
+            name: "image",
+            label: translate("admin.product.form.image"),
+            type: "file",
+            accept: "image/*"
+        },
+    ];
+
     return (
         <div>
-            {errorMessage && <div className="alert alert-danger">{errorMessage}</div>}
+            {errorMessage && <div className="alert alert-danger text-center">{errorMessage}</div>}
+            {uploading && <div className="alert alert-info text-center">📤 {translate("admin.product.form.uploadingImage")}</div>}
 
-            <Formik
+            <Form
+                fields={fields}
                 initialValues={initialValues}
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
-                enableReinitialize
-            >
-                {({ isSubmitting, setFieldValue }) => (
-                    <Form>
-                        <div className="mb-3">
-                            <label className="form-label">Categoría</label>
-                            <Field name="category" type="text" className="form-control" />
-                            <ErrorMessage name="category" component="div" className="text-danger" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Nombre</label>
-                            <Field name="name" type="text" className="form-control" />
-                            <ErrorMessage name="name" component="div" className="text-danger" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Descripción</label>
-                            <Field as="textarea" name="description" className="form-control" />
-                            <ErrorMessage name="description" component="div" className="text-danger" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Marca</label>
-                            <Field name="brand" type="text" className="form-control" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Modelo</label>
-                            <Field name="model" type="text" className="form-control" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Precio</label>
-                            <Field name="price" type="number" className="form-control" step="0.01" />
-                            <ErrorMessage name="price" component="div" className="text-danger" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Stock</label>
-                            <Field name="stock" type="number" className="form-control" />
-                            <ErrorMessage name="stock" component="div" className="text-danger" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">¿Publicar?</label>
-                            <Field name="is_public" type="checkbox" className="form-check-input ms-2" />
-                        </div>
-
-                        <div className="mb-3">
-                            <label className="form-label">Imagen</label>
-                            <input
-                                type="file"
-                                className="form-control"
-                                accept="image/*"
-                                onChange={(event) => {
-                                    const file = event.currentTarget.files[0];
-                                    setFieldValue("image_url", file);
-
-                                    if (file) {
-                                        setPreviewImages([URL.createObjectURL(file)]);
-                                    }
-                                }}
-                            />
-                        </div>
-
-                        {previewImages.length > 0 && (
-                            <div className="mb-3 text-center">
-                                <p className="text-muted">Vista previa de la imagen:</p>
-                                <img
-                                    src={previewImages[0]}
-                                    alt="Vista previa"
-                                    className="img-thumbnail"
-                                    style={{ maxWidth: "150px", maxHeight: "150px" }}
-                                />
-                            </div>
-                        )}
-
-                        <div className="d-flex justify-content-end">
-                            <button type="submit" className="btn btn-success me-2" disabled={isSubmitting}>
-                                {isSubmitting ? "Guardando..." : id ? "Guardar Cambios" : "Crear Producto"}
-                            </button>
-                            <button type="button" className="btn btn-secondary" onClick={() => navigate("/admin/products")}>
-                                Cancelar
-                            </button>
-                        </div>
-                    </Form>
-                )}
-            </Formik>
+                handleImageChange={handleImageChange} 
+                submitText={productId ? translate("admin.product.form.saveChanges") : translate("admin.product.form.createProduct")}
+            />
         </div>
     );
 };
 
 export default ProductForm;
- 

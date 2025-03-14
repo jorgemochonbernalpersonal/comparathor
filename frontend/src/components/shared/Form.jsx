@@ -1,116 +1,99 @@
-import React from "react";
+import React, { useState } from "react";
 import { Formik, Form as FormikForm, Field, ErrorMessage } from "formik";
-import * as Yup from "yup";
+import {
+    TextField,
+    Button,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+    FormHelperText,
+    Checkbox,
+    FormControlLabel,
+    CircularProgress,
+    Typography
+} from "@mui/material";
+import { translate } from "../../utils/Translate";
 
-const Form = ({ fields, onSubmit, submitText = "Enviar" }) => {
-    const validationSchema = Yup.object(
-        fields.reduce((schema, field) => {
-            let validator;
-
-            switch (field.type) {
-                case "email":
-                    validator = Yup.string()
-                        .email("Please enter a valid email address.")
-                        .required("The email is required.");
-                    break;
-                case "password":
-                    validator = Yup.string()
-                        .min(6, "The password must be at least 6 characters long.")
-                        .required("The password is required.");
-                    break;
-                case "number":
-                    validator = Yup.number()
-                        .typeError("Please enter a valid number.")
-                        .required("This field is required.");
-                    break;
-                case "checkbox":
-                    validator = Yup.bool().oneOf([true], "You must accept the terms.");
-                    break;
-                default:
-                    validator = Yup.string();
-                    break;
-            }
-
-            if (field.required) {
-                validator = validator.required(`The ${field.name} is required.`);
-            }
-
-            return { ...schema, [field.name]: validator };
-        }, {})
-    );
-
-    const initialValues = fields.reduce(
-        (values, field) => ({
-            ...values,
-            [field.name]: field.defaultValue || (field.type === "checkbox" ? false : ""),
-        }),
-        {}
-    );
+const Form = ({ fields, initialValues, validationSchema, onSubmit, submitText = translate("shared.buttons.save"), handleImageChange }) => {
+    const [imagePreview, setImagePreview] = useState(initialValues.image || null);
 
     return (
-        <Formik
-            initialValues={initialValues}
-            validationSchema={validationSchema}
-            onSubmit={onSubmit}
-        >
-            {({ isSubmitting }) => (
-                <FormikForm className="mt-4 mx-auto" style={{ maxWidth: "400px" }}>
+        <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onSubmit}>
+            {({ isSubmitting, setFieldValue }) => (
+                <FormikForm style={{ maxWidth: "400px", margin: "auto", marginTop: "20px" }}>
                     {fields.map((field) => (
-                        <div key={field.name} className="mb-3">
-                            <label className="form-label">{field.label}</label>
-
-                            {field.type === "textarea" ? (
-                                <Field
-                                    as="textarea"
-                                    name={field.name}
-                                    className="form-control"
-                                    rows={field.rows || 3}
-                                />
-                            ) : field.type === "select" ? (
-                                <Field as="select" name={field.name} className="form-control">
-                                    <option value="">Seleccione una opción</option>
-                                    {field.options.map((option) => (
-                                        <option key={option.value} value={option.value}>
-                                            {option.label}
-                                        </option>
-                                    ))}
-                                </Field>
-                            ) : field.type === "radio" ? (
-                                field.options.map((option) => (
-                                    <div key={option.value} className="form-check">
-                                        <Field
-                                            type="radio"
-                                            name={field.name}
-                                            value={option.value}
-                                            className="form-check-input"
-                                        />
-                                        <label className="form-check-label">{option.label}</label>
-                                    </div>
-                                ))
-                            ) : field.type === "checkbox" ? (
-                                <div className="form-check">
-                                    <Field
-                                        type="checkbox"
+                        <div key={field.name} style={{ marginBottom: "16px" }}>
+                            {field.type === "file" ? (
+                                <>
+                                    {imagePreview && (
+                                        <div style={{ textAlign: "center", marginBottom: "10px" }}>
+                                            <Typography variant="subtitle2">{translate("shared.form.imagePreview")}</Typography>
+                                            <img src={imagePreview} alt="Preview" style={{ maxWidth: "200px", maxHeight: "200px", objectFit: "cover" }} />
+                                        </div>
+                                    )}
+                                    <input
+                                        id={field.name}
                                         name={field.name}
-                                        className="form-check-input"
+                                        type="file"
+                                        accept={field.accept || "image/*"}
+                                        onChange={(event) => {
+                                            handleImageChange(event, setFieldValue);
+                                            const file = event.target.files[0];
+                                            if (file) {
+                                                setImagePreview(URL.createObjectURL(file));
+                                            } else {
+                                                setImagePreview(initialValues.image || null);
+                                            }
+                                        }}
+                                        style={{ display: "block", width: "100%", marginTop: "8px" }}
                                     />
-                                    <label className="form-check-label">{field.label}</label>
-                                </div>
+                                </>
+                            ) : field.type === "select" ? (
+                                <FormControl fullWidth>
+                                    <InputLabel>{field.label}</InputLabel>
+                                    <Field as={Select} name={field.name}>
+                                        {field.options.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </MenuItem>
+                                        ))}
+                                    </Field>
+                                    <ErrorMessage name={field.name} component={FormHelperText} error />
+                                </FormControl>
+                            ) : field.type === "textarea" ? (
+                                <Field
+                                    as={TextField}
+                                    fullWidth
+                                    multiline
+                                    rows={field.rows || 3}
+                                    label={field.label}
+                                    name={field.name}
+                                    variant="outlined"
+                                />
+                            ) : field.type === "checkbox" ? (
+                                <FormControlLabel
+                                    control={<Field as={Checkbox} name={field.name} />}
+                                    label={field.label}
+                                />
                             ) : (
-                                <Field type={field.type} name={field.name} className="form-control" />
+                                <Field
+                                    as={TextField}
+                                    fullWidth
+                                    label={field.label}
+                                    name={field.name}
+                                    type={field.type}
+                                    variant="outlined"
+                                    autoComplete={field.type === "password" ? "off" : "on"}
+                                />
                             )}
-
-                            <ErrorMessage
-                                name={field.name}
-                                component="div"
-                                className="text-danger"
-                            />
+                            <ErrorMessage name={field.name} component={FormHelperText} error />
                         </div>
                     ))}
 
-                    <button type="submit" className="btn btn-primary w-100" disabled={isSubmitting}>
-                        {isSubmitting ? "Enviando..." : submitText}
-                    </button>
+                    <Button type="submit" variant="contained" color="primary" fullWidth disabled={isSubmitting}>
+                        {isSubmitting ? <CircularProgress size={24} /> : submitText}
+                    </Button>
                 </FormikForm>
             )}
         </Formik>

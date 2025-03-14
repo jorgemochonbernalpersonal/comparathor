@@ -1,36 +1,60 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetch } from "../hooks/UseFetch";
-import { getAllUsers, getUserById, updateUserById, deleteUserById } from "../api/users/UserLogic";
+import { createUserById, updateUserById, deleteUserById } from "../api/users/UserLogic";
+import { toast } from "react-toastify";
 
-const UserContext = createContext();
+export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
     const { fetchData } = useFetch();
-    const [isLoading, setIsLoading] = useState(false);
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        if (localStorage.getItem("accessToken")) {
-            loadUsers();
-        }
-    }, []);
-
-    const loadUsers = async (filters) => {
-        setIsLoading(true);
-        try {
-            return await getAllUsers(fetchData, filters);
-        } catch (error) {
-            console.error("❌ Error al obtener usuarios:", error);
-            return { users: [], total: 0 };
-        } finally {
-            setIsLoading(false);
-        }
+    const getErrorMessage = (error, defaultMessage) => {
+        let errorMsg = error?.response?.data?.message || error?.message || defaultMessage;
+        return errorMsg.replace(/^Error \d+: /, "");
     };
 
+    const createUserMutation = useMutation({
+        mutationFn: (userData) => createUserById(fetchData, userData),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["users"]); 
+            toast.success(data.message || "✅ Usuario creado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al crear usuario."));
+        },
+    });
+    
+    const updateUserMutation = useMutation({
+        mutationFn: ({ id, userData }) => updateUserById(fetchData, id, userData),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["users"]);
+            toast.success(data.message || "✅ Usuario actualizado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al actualizar usuario."));
+        },
+    });
+
+    const deleteUserMutation = useMutation({
+        mutationFn: (id) => deleteUserById(fetchData, id),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["users"]);
+            toast.success(data.message || "✅ Usuario eliminado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al eliminar usuario."));
+        },
+    });
+
     return (
-        <UserContext.Provider value={{ loadUsers, updateUserById, deleteUserById, isLoading }}>
+        <UserContext.Provider value={{
+            createUser: createUserMutation.mutateAsync,
+            updateUser: updateUserMutation.mutateAsync,
+            deleteUser: deleteUserMutation.mutateAsync
+        }}>
             {children}
         </UserContext.Provider>
     );
 };
-
-export const useUser = () => useContext(UserContext);

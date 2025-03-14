@@ -1,61 +1,60 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetch } from "../hooks/UseFetch";
-import {
-    getAllProducts,
-    loadProductById,
-    loadProductsByCategory,
-    addProduct,
-    updateProductById,
-    deleteProductById,
-} from "../api/products/ProductLogic";
+import { createProductById, updateProductById, deleteProductById } from "../api/products/ProductLogic";
+import { toast } from "react-toastify";
 
-const ProductContext = createContext();
+export const ProductContext = createContext();
 
 export const ProductProvider = ({ children }) => {
     const { fetchData } = useFetch();
-    const [isLoading, setIsLoading] = useState(false);
-    const [products, setProducts] = useState([]);
-    const [totalProducts, setTotalProducts] = useState(0);
+    const queryClient = useQueryClient();
 
-    useEffect(() => {
-        loadProducts();
-    }, []);
-
-    const loadProducts = async (filters = {}, page = 1, limit = 10) => {
-        setIsLoading(true);
-        try {
-            const response = await getAllProducts(fetchData, { ...filters, page, limit });
-            setProducts(response.products || []);
-            setTotalProducts(response.total || 0);
-            return response;
-        } catch (error) {
-            console.error("❌ Error al obtener productos:", error);
-            return { products: [], total: 0 };
-        } finally {
-            setIsLoading(false);
-        }
+    const getErrorMessage = (error, defaultMessage) => {
+        let errorMsg = error?.response?.data?.message || error?.message || defaultMessage;
+        return errorMsg.replace(/^Error \d+: /, "");
     };
 
+    const createProductMutation = useMutation({
+        mutationFn: (productData) => createProductById(fetchData, productData),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["products"]);
+            toast.success(data.message || "✅ Producto creado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al crear producto."));
+        },
+    });
+
+    const updateProductMutation = useMutation({
+        mutationFn: ({ id, productData }) => updateProductById(fetchData, id, productData),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["products"]);
+            toast.success(data.message || "✅ Producto actualizado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al actualizar producto."));
+        },
+    });
+
+    const deleteProductMutation = useMutation({
+        mutationFn: (id) => deleteProductById(fetchData, id),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries(["products"]);
+            toast.success(data.message || "✅ Producto eliminado con éxito.");
+        },
+        onError: (error) => {
+            toast.error(getErrorMessage(error, "❌ Error al eliminar producto."));
+        },
+    });
+
     return (
-        <ProductContext.Provider
-            value={{
-                products,
-                isLoading,
-                totalProducts,
-                loadProducts,
-                loadProductById: (id) => loadProductById(fetchData, id),
-                loadProductsByCategory: (category) => loadProductsByCategory(fetchData, category),
-                addProduct: (newProduct, image, token) =>
-                    addProduct(fetchData, setProducts, setIsLoading, newProduct, image, token),
-                updateProductById: (id, updates, image, token) =>
-                    updateProductById(fetchData, setProducts, setIsLoading, id, updates, image, token),
-                deleteProductById: (id, token) =>
-                    deleteProductById(fetchData, setProducts, setIsLoading, id, token),
-            }}
-        >
+        <ProductContext.Provider value={{
+            createProduct: createProductMutation.mutateAsync,
+            updateProduct: updateProductMutation.mutateAsync,
+            deleteProduct: deleteProductMutation.mutateAsync,
+        }}>
             {children}
         </ProductContext.Provider>
     );
 };
-
-export const useProduct = () => useContext(ProductContext);

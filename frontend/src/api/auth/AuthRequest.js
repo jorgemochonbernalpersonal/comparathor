@@ -12,6 +12,5 @@ export const fetchRefreshToken = async (fetchData, refreshToken) => {
 };
 
 export const fetchLogout = async (fetchData, refreshToken) => {
-
     return await fetchData("auth/logout", "POST", { refresh_token: refreshToken });
 };

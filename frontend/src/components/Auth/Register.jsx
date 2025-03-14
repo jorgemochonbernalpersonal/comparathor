@@ -1,77 +1,70 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthForm from "../auth/AuthForm";
-import LoadingSpinner from "../shared/LoadingSpinner";
-import { useAuth } from "../../contexts/AuthContext";
-import { useRole } from "../../hooks/UseRole";
-import { ROLES } from "../../utils/Constants";
+import * as Yup from "yup";
+import Form from "../shared/Form";
+import { useAuth } from "../../hooks/UseAuth";
 
 const Register = () => {
+    const { register, isAuthenticated, isAdmin } = useAuth();
     const navigate = useNavigate();
-    const { register, currentUser } = useAuth();
-    const { hasRole } = useRole();
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [errorMessage, setErrorMessage] = useState(null);
+
+    const initialValues = {
+        name: "",
+        email: "",
+        password: "",
+    };
+
+    const validationSchema = Yup.object({
+        name: Yup.string()
+            .min(2, "El nombre debe tener al menos 2 caracteres.")
+            .required("El nombre es requerido."),
+        email: Yup.string()
+            .email("Correo electrónico inválido.")
+            .required("El correo electrónico es requerido."),
+        password: Yup.string()
+            .required("La contraseña es requerida.")
+            .min(6, "La contraseña debe tener al menos 6 caracteres."),
+    });
 
     const formFields = [
-        { name: "name", label: "Nombre Completo", type: "text", required: true },
-        { name: "email", label: "Correo Electrónico", type: "email", required: true },
-        { name: "password", label: "Contraseña", type: "password", required: true },
+        { name: "name", label: "Nombre Completo", type: "text" },
+        { name: "email", label: "Correo Electrónico", type: "email" },
+        { name: "password", label: "Contraseña", type: "password" },
     ];
 
-    const handleSubmit = async (values, { setSubmitting }) => {
-        setError("");
-        setLoading(true);
-
+    const handleSubmit = async (values, actions) => {
         try {
-            const response = await register({
-                username: values.name,
-                email: values.email,
-                password: values.password,
-                role: values.role || ROLES.REGISTERED, 
-            });
-
-            if (!response || !response.accessToken || !response.refreshToken || !response.user) {
-                throw new Error("No se recibieron datos válidos del servidor.");
-            }
-
-            console.log("✅ Usuario registrado:", response.user);
-        } catch (err) {
-            console.error("❌ Error en registro:", err.message);
-            setError("Error al registrarse, revisa los datos e inténtalo de nuevo.");
+            await register(values);
+        } catch (error) {
+            let errorMsg = error?.response?.data?.message || error?.message || "❌ Error al procesar la solicitud.";
+            setErrorMessage(errorMsg);
         } finally {
-            setLoading(false);
-            setSubmitting(false);
+            actions.setSubmitting(false);
         }
     };
 
-    // ⏳ Redirigir cuando el usuario se actualice correctamente
     useEffect(() => {
-        if (currentUser) {
-            if (hasRole(ROLES.ADMIN)) {
-                navigate("/admin/dashboard");
-            } else {
-                navigate("/dashboard");
-            }
+        if (isAuthenticated) {
+            navigate(isAdmin ? "/admin" : "/dashboard");
         }
-    }, [currentUser, navigate, hasRole]);
+    }, [isAuthenticated, isAdmin, navigate]);
 
     return (
         <div>
-            {error && <div className="text-danger text-center small mb-2">{error}</div>}
-
-            {loading ? (
-                <div className="text-center">
-                    <LoadingSpinner size="medium" color="#007bff" />
+            {errorMessage && (
+                <div className="alert alert-danger text-center">
+                    {errorMessage}
                 </div>
-            ) : (
-                <AuthForm
-                    title="📝 Crear Cuenta"
-                    fields={formFields}
-                    onSubmit={handleSubmit}
-                    submitText="Registrarse"
-                />
             )}
+            <Form
+                title="📝 Registro de Usuario"
+                fields={formFields}
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+                submitText="Registrarse"
+            />
         </div>
     );
 };

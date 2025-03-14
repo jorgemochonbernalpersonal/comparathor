@@ -10,24 +10,23 @@ import java.util.List;
 @Mapper
 public interface UserRepository {
     User findById(@Param("id") Long id);
-
     User findByEmail(@Param("email") String email);
-
-    int existsByEmail(@Param("email") String email);
-
     void save(User user);
-
+    void update(User user);
+    void delete(@Param("id") Long id);
     List<User> findFilteredUsers(
-            @Param("roleName") String roleName,
+            @Param("roleId") Long roleId,
             @Param("searchTerm") String searchTerm,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
+            @Param("size") int size,
             @Param("offset") int offset,
-            @Param("size") int size
+            @Param("sortField") String sortField,
+            @Param("sortOrder") String sortOrder
     );
 
     int countFilteredUsers(
-            @Param("roleName") String roleName,
+            @Param("roleId") Long roleId,
             @Param("searchTerm") String searchTerm,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate

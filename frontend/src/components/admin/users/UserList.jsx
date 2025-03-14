@@ -1,38 +1,40 @@
-import React, { useEffect, useState } from "react";
-import { useUser } from "../../../contexts/UserContext";
+import React, { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
+import { translate } from "../../../utils/Translate";
+import { useUser } from "../../../hooks/UseUser";
+import { useRole } from "../../../hooks/UseRole";
 import Table from "../../shared/Table";
 import CellDate from "../../shared/CellDate";
 import UserFilters from "./filter/UserFilters";
 import FilterBar from "../../shared/FilterBar";
 import Modal from "../../shared/Modal";
 import UserForm from "./form/UserForm";
+import LoadingSpinner from "../../shared/LoadingSpinner";
 
 const UserList = () => {
-    const { loadUsers, updateUserById, registerUser, deleteUserById, isLoading } = useUser();
-
+    const usersPerPage = 10;
+    const [searchParams, setSearchParams] = useSearchParams();
     const [selectedUser, setSelectedUser] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showFiltersModal, setShowFiltersModal] = useState(false);
-    const [filteredUsers, setFilteredUsers] = useState([]);
-    const [currentPage, setCurrentPage] = useState(0);
-    const [totalUsers, setTotalUsers] = useState(0);
-    const usersPerPage = 10;
-    const [filters, setFilters] = useState({ search: "", startDate: "", endDate: "", role_id: "" });
+
+    const filters = useMemo(() => ({
+        search: searchParams.get("search") || "",
+        startDate: searchParams.get("startDate") || "",
+        endDate: searchParams.get("endDate") || "",
+        role_id: searchParams.get("roleId") || "",
+        page: parseInt(searchParams.get("page") || "1", 10),
+        size: parseInt(searchParams.get("size") || usersPerPage.toString(), 10),
+        sortField: searchParams.get("sortField") || "id",
+        sortOrder: searchParams.get("sortOrder") || "asc",
+    }), [searchParams]);
+
+    const { users, totalUsers, isLoading, createUser, updateUser, deleteUser, refetchUsers, handleSort, sortField, sortOrder, handlePageChange, currentPage } = useUser(filters);
+    const { roles } = useRole();
 
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const response = await loadUsers({ ...filters, page: currentPage, limit: usersPerPage });
-                if (response?.users) {
-                    setFilteredUsers(response.users);
-                    setTotalUsers(response.total);
-                }
-            } catch (error) {
-                console.error("❌ Error al cargar usuarios:", error);
-            }
-        };
-        fetchUsers();
-    }, [currentPage, usersPerPage, filters]);
+        refetchUsers(filters);
+    }, [filters, refetchUsers]);
 
     const openModal = (user = null) => {
         setSelectedUser(user);
@@ -46,73 +48,136 @@ const UserList = () => {
 
     const handleSave = async (formData, userId) => {
         try {
-            if (userId) {
-                await updateUserById(userId, formData);
-            } else {
-                await registerUser(formData);
-            }
+            let response = userId
+                ? await updateUser({ id: userId, userData: formData })
+                : await createUser(formData);
+
             closeModal();
-            setCurrentPage(0); // Reiniciar paginación tras guardar
+            refetchUsers();
+            return response;
         } catch (error) {
-            console.error("❌ Hubo un error al guardar el usuario.");
+            console.error("❌ Error al guardar usuario:", error);
         }
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(`¿Seguro que quieres eliminar a ${user.name}?`)) return;
-
+        if (!window.confirm(translate("admin.user.list.confirmDelete", { name: user.name }))) return;
         try {
-            await deleteUserById(user.id);
-            setCurrentPage(0);
+            await deleteUser(user.id);
+            setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), page: "1" }));
         } catch (error) {
-            console.error("❌ No se pudo eliminar el usuario.");
+            console.error("❌ Error al eliminar usuario:", error);
         }
+    };
+
+    const handleSortWrapper = (field) => {
+        const newOrder = filters.sortField === field && filters.sortOrder === "asc" ? "desc" : "asc";
+        setSearchParams(prevParams => ({
+            ...Object.fromEntries(prevParams.entries()),
+            sortField: field,
+            sortOrder: newOrder,
+            page: "1",
+        }));
+
+        handleSort(field);
+    };
+
+    const handleApplyFilters = (newFilters) => {
+        setSearchParams({
+            search: newFilters.search || "",
+            startDate: newFilters.startDate || "",
+            endDate: newFilters.endDate || "",
+            roleId: newFilters.role_id || "",
+            page: "1",
+            size: usersPerPage.toString(),
+            sortField: filters.sortField,
+            sortOrder: filters.sortOrder,
+        });
+        setShowFiltersModal(false);
+    };
+
+    const handleClearFilters = () => {
+        setSearchParams({ page: "1", size: usersPerPage.toString(), sortField: "id", sortOrder: "asc" });
     };
 
     return (
         <div className="container mt-4">
-
             <FilterBar
-                onSearch={(term) => setFilters((prev) => ({ ...prev, search: term }))}
+                onSearch={(term) => setSearchParams({ ...filters, search: term })}
                 onOpenFilters={() => setShowFiltersModal(true)}
-                onCreate={openModal}
+                onCreate={() => openModal()}
             />
 
-            {!isLoading && filteredUsers.length > 0 ? (
+            <div className="mb-3">
+                {filters.search && <span className="badge bg-info me-2">🔍 {filters.search}</span>}
+                {filters.startDate && <span className="badge bg-warning me-2">📅 {filters.startDate}</span>}
+                {filters.endDate && <span className="badge bg-warning me-2">📅 {filters.endDate}</span>}
+                {filters.role_id && <span className="badge bg-primary me-2">🛠 {roles.find(r => r.id.toString() === filters.role_id)?.name || "Rol desconocido"}</span>}
+            </div>
+
+            {isLoading ? (
+                <div className="text-center mt-5">
+                    <LoadingSpinner/>
+                </div>
+            ) : users.length > 0 ? (
                 <Table
+                    title={translate("admin.user.list.userList")}
                     columns={[
-                        { label: "ID", field: "id" },
-                        { label: "Nombre", field: "name" }, 
-                        { label: "Email", field: "email" },
-                        { label: "Rol", field: (row) => row.role?.name || "Sin Rol" },
-                        { label: "Registrado", field: (row) => <CellDate value={row.createdAt} /> },
+                        { label: translate("admin.user.list.id"), field: "id" },
+                        { label: translate("admin.user.list.name"), field: "name" },
+                        { label: translate("admin.user.list.email"), field: "email" },
+                        {
+                            label: translate("admin.user.list.role"),
+                            field: "roleName",
+                            render: (row) => row.role?.name || translate("admin.user.list.noRole"),
+                        },
+                        {
+                            label: translate("admin.user.list.registered"),
+                            field: "createdAt",
+                            render: (row) => <CellDate value={row.createdAt} />,
+                        },
                     ]}
-                    data={filteredUsers}
+                    data={users.map(user => ({
+                        ...user,
+                        roleName: user.role?.name || translate("admin.user.list.noRole"),
+                    }))}
                     actions={[
-                        { label: "✏️ Editar", type: "warning", handler: openModal },
-                        { label: "🗑️ Eliminar", type: "danger", handler: handleDelete },
+                        { label: `✏️ ${translate("admin.user.list.edit")}`, type: "primary", handler: openModal },
+                        { label: `🗑️ ${translate("admin.user.list.delete")}`, type: "danger", handler: handleDelete },
                     ]}
+                    hiddenColumnsBreakpoints={{
+                        xs: [translate("admin.user.list.email"), translate("admin.user.list.registered"), translate("admin.user.list.name")],
+                        sm: [translate("admin.user.list.email"), translate("admin.user.list.registered")],
+                        md: [translate("admin.user.list.email")],
+                        lg: []
+                    }}
+                    onSort={handleSortWrapper}
+                    sortField={sortField}
+                    sortOrder={sortOrder}
                     currentPage={currentPage}
-                    itemsPerPage={usersPerPage}
-                    totalItems={totalUsers}
-                    onPageChange={setCurrentPage}
+                    onPageChange={handlePageChange}
+                    totalPages={Math.ceil(totalUsers / filters.size)}
                 />
+
             ) : (
-                <p className="text-center mt-4">No se encontraron usuarios.</p>
+                <p className="text-center mt-4">{translate("admin.user.list.noUsersFound")}</p>
             )}
 
-            {showFiltersModal && (
-                <UserFilters.jsx
-                    show={showFiltersModal}
-                    onClose={() => setShowFiltersModal(false)}
-                    onApplyFilters={setFilters}
-                />
-            )}
-            {showModal && (
-                <Modal title={selectedUser ? "Editar Usuario" : "Crear Usuario"} onClose={closeModal}>
-                    <UserForm user={selectedUser} onSave={handleSave} />
-                </Modal>
-            )}
+            <UserFilters
+                open={showFiltersModal}
+                onClose={() => setShowFiltersModal(false)}
+                onApplyFilters={handleApplyFilters}
+                onResetFilters={handleClearFilters}
+                roles={roles}
+            />
+
+            <Modal
+                title={selectedUser ? translate("admin.user.list.editUser") : translate("admin.user.list.createUser")}
+                open={showModal}
+                onClose={closeModal}
+            >
+                <UserForm user={selectedUser} onSave={handleSave} setShowModal={setShowModal} />
+            </Modal>
         </div>
     );
 };

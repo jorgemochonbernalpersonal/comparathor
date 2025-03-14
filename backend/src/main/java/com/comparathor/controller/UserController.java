@@ -1,17 +1,16 @@
 package com.comparathor.controller;
 
+import com.comparathor.exception.BadRequestException;
 import com.comparathor.exception.ForbiddenException;
-import com.comparathor.model.User;
-import com.comparathor.service.UserService;
+import com.comparathor.repository.RoleRepository;
 import com.comparathor.service.UserSecurityService;
-import jakarta.servlet.http.HttpServletRequest;
+import com.comparathor.service.UserService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,39 +26,80 @@ public class UserController {
 
     @GetMapping
     public Map<String, Object> getUsersFiltered(
-            @RequestParam(name = "roleName", required = false) String roleName,
+            @RequestHeader("Authorization") String token,
+            @RequestParam(name = "roleId", required = false) Long roleId,
             @RequestParam(name = "searchTerm", required = false) String searchTerm,
-            @RequestParam(name = "startDate", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(name = "endDate", required = false)
-            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(name = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", defaultValue = "10") int size) {
-
-        System.out.println("🔍 Filtrando usuarios...");
-        System.out.println("📌 Role: " + (roleName != null ? roleName : "No filtrado"));
-        System.out.println("🔎 Search: " + (searchTerm != null ? searchTerm : "No filtrado"));
-        System.out.println("📅 Fecha inicio: " + (startDate != null ? startDate : "No filtrado"));
-        System.out.println("📅 Fecha fin: " + (endDate != null ? endDate : "No filtrado"));
-        System.out.println("📄 Página: " + page + " | Tamaño: " + size);
-
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sortField", required = false) String sortField,
+            @RequestParam(name = "sortOrder", required = false) String sortOrder) {
+        validateAccess(token);
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
-
-        return userService.getFilteredUsers(roleName, searchTerm, startDateTime, endDateTime, page, size);
+        return userService.getFilteredUsers(roleId, searchTerm, startDateTime, endDateTime, page, size, sortField, sortOrder);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getUserById(HttpServletRequest request, @PathVariable Long id) {
-        String token = request.getHeader("Authorization");
-        validateAccess(request, token, id);
-        User user = userService.getUserById(id);
-        return ResponseEntity.ok(user);
+    @PostMapping
+    public ResponseEntity<Map<String, Object>> createUser(@RequestHeader("Authorization") String token,
+                                                          @RequestBody Map<String, String> request) {
+        validateAccess(token);
+        if (!request.containsKey("name") || !request.containsKey("email") || !request.containsKey("password")) {
+            throw new BadRequestException("❌ Se requiere name, email y password.");
+        }
+        Long roleId = request.containsKey("roleId") ? Long.parseLong(request.get("roleId")) : 2L;
+        Map<String, Object> response = userService.registerUser(
+                request.get("name"),
+                request.get("email"),
+                request.get("password"),
+                roleId
+        );
+        return ResponseEntity.ok(response);
     }
 
-    private void validateAccess(HttpServletRequest request, String token, Long userId) {
-        if (!userSecurityService.hasRole(token, "ROLE_ADMIN") && !userSecurityService.isCurrentUser(request, userId)) {
-            throw new ForbiddenException("🚫 Access denied. You do not have permission to view this user.");
+    @PutMapping("/{userId}")
+    public ResponseEntity<Map<String, Object>> editUser(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        validateAccess(token);
+        if (!request.containsKey("name") && !request.containsKey("email") && !request.containsKey("roleId")) {
+            throw new BadRequestException("❌ Se requiere al menos un campo para actualizar.");
+        }
+        String name = request.get("name");
+        String email = request.get("email");
+        Long roleId = request.containsKey("roleId") ? Long.parseLong(request.get("roleId")) : null;
+        Map<String, Object> response = userService.editUser(userId, name, email, roleId);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Map<String, Object>> deleteUser(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long userId) {
+        validateAccess(token);
+        userService.deleteUser(userId);
+        return ResponseEntity.ok(Map.of("message", "✅ Usuario eliminado con éxito."));
+    }
+
+    @PatchMapping("/{userId}/password")
+    public ResponseEntity<Map<String, Object>> updateUserPassword(
+            @RequestHeader("Authorization") String token,
+            @PathVariable Long userId,
+            @RequestBody Map<String, String> request) {
+        validateAccess(token);
+        if (!request.containsKey("password")) {
+            throw new BadRequestException("❌ Se requiere la nueva contraseña.");
+        }
+        String newPassword = request.get("password");
+        Map<String, Object> response = userService.updateUserPassword(userId, newPassword);
+        return ResponseEntity.ok(response);
+    }
+
+    private void validateAccess(String token) {
+        if (!userSecurityService.hasRole(token, "ROLE_ADMIN")) {
+            throw new ForbiddenException("🚫 Acceso denegado. Se requiere el rol: " + "ROLE_ADMIN");
         }
     }
 }

@@ -39,7 +39,6 @@
     position: relative;
 }
 
-/* 🔥 Resalta la página activa */
 .active-link {
     color: #ffffff !important;
     font-weight: 700;
@@ -47,7 +46,6 @@
     border-radius: 6px;
 }
 
-/* 🔥 Agrega una barra inferior animada */
 .active-link::after {
     content: "";
     display: block;
@@ -60,7 +58,6 @@
     transition: width 0.3s ease-in-out;
 }
 
-/* 🔥 Efecto hover para resaltar más */
 .custom-link:hover {
     background-color: rgba(0, 123, 255, 0.2);
     color: #007BFF !important;
@@ -102,4 +99,11 @@
     to {
         transform: translateY(-3px);
     }
+}
+
+
+.robot-icon {
+    animation: none !important;
+    transition: none !important;
+    display: inline-block; 
 }

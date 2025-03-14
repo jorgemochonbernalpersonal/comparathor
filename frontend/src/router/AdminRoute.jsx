@@ -1,13 +1,20 @@
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useRole } from "../hooks/UseRole"
+import { useAuth } from "../hooks/UseAuth";
+import { ROLES } from "../utils/Constants";
 
 const AdminRoute = () => {
-    const { isAdmin } = useRole(); 
+    const { user, isAdmin } = useAuth();
 
-    console.log("🔍 Verificando acceso admin:", isAdmin);
+    if (!user) {
+        return <Navigate to="/login" />;
+    }
 
-    return isAdmin ? <Outlet /> : <Navigate to="/" replace />;
+    if (!isAdmin) {
+        return <Navigate to="/unauthorized" />;
+    }
+
+    return <Outlet />;
 };
 
 export default AdminRoute;

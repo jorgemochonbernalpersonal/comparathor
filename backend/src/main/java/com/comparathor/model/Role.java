@@ -2,6 +2,8 @@ package com.comparathor.model;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -11,8 +13,12 @@ public class Role {
     private Long id;
     private String name;
     private String description;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private String roleCreatedBy;
 
-    public boolean matches(String roleName) {
-        return this.name.equalsIgnoreCase(roleName);
+    public Role(String name, String description) {
+        this.name = name;
+        this.description = description;
     }
 }

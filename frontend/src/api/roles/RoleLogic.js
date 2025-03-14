@@ -7,81 +7,94 @@ import {
 } from "./RoleRequest";
 
 export const getAllRoles = async (fetchData, filters = {}) => {
+    if (!fetchData) {
+        return { roles: [], total: 0 };
+    }
+
     try {
         const queryParams = new URLSearchParams();
 
         if (filters.roleName) queryParams.append("roleName", filters.roleName);
+        if (filters.searchTerm) queryParams.append("searchTerm", filters.searchTerm);
+        if (filters.startDate) queryParams.append("startDate", filters.startDate.toString());
+        if (filters.endDate) queryParams.append("endDate", filters.endDate.toString());
+        if (filters.updatedStartDate) queryParams.append("updatedStartDate", filters.updatedStartDate.toString());
+        if (filters.updatedEndDate) queryParams.append("updatedEndDate", filters.updatedEndDate.toString());
+        if (filters.roleCreatedBy) queryParams.append("roleCreatedBy", filters.roleCreatedBy);
+        if (filters.sortField) queryParams.append("sortField", filters.sortField);
+        if (filters.sortOrder) queryParams.append("sortOrder", filters.sortOrder);
 
-        const endpoint = `/api/roles${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+        const endpoint = `roles?${queryParams.toString()}`;
+        console.log("📡 Llamando API:", endpoint); // 🕵️‍♂️ DEBUG
+
         const response = await fetchAllRoles(fetchData, endpoint);
 
-        if (!response || !Array.isArray(response)) {
-            throw new Error("⚠️ La API no devolvió un array válido de roles");
-        }
-
-        console.log("✅ Roles cargados:", response);
-        return { roles: response };
+        return {
+            roles: response.content ?? [],
+            total: response.totalElements ?? 0,
+        };
     } catch (error) {
-        console.error("❌ Error al cargar roles:", error);
-        return { roles: [] };
+        console.error("❌ Error al cargar roles:", error.response?.data || error.message);
+        return { roles: [], total: 0 };
     }
 };
 
 export const getRoleById = async (fetchData, roleId) => {
+    if (!fetchData) {
+        console.error("❌ Error: `fetchData` no está definido.");
+        return null;
+    }
+
     try {
-        const role = await fetchRoleById(fetchData, roleId);
-        console.log(`✅ Rol obtenido [ID ${roleId}]:`, role);
-        return role;
+        return await fetchRoleById(fetchData, roleId);
     } catch (error) {
-        console.error(`❌ Error al obtener el rol con ID ${roleId}:`, error);
+        console.error(`❌ Error al obtener el rol con ID ${roleId}:`, error.response?.data || error.message);
         return null;
     }
 };
 
-export const addRole = async (fetchData, setRoles, setIsLoading, setError, newRole) => {
-    setIsLoading(true);
+export const addRole = async (fetchData, newRole) => {
+    console.log(newRole)
+    if (!fetchData) {
+        console.error("❌ Error: `fetchData` no está definido.");
+        throw new Error("fetchData no está disponible.");
+    }
+
     try {
-        const createdRole = await createRole(fetchData, newRole);
-        setRoles((prevRoles) => [...prevRoles, createdRole]);
-        console.log("✅ Rol agregado:", createdRole);
-        return createdRole;
+        return await createRole(fetchData, newRole);
     } catch (error) {
-        console.error("❌ Error al agregar rol:", error);
-        setError(error.message || "Error al agregar rol.");
-        return null;
-    } finally {
-        setIsLoading(false);
+        console.error("❌ Error al agregar rol:", error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || "Error al agregar rol.");
     }
 };
 
-export const updateRoleById = async (fetchData, setRoles, setIsLoading, setError, roleId, updates) => {
-    setIsLoading(true);
+export const updateRoleById = async (fetchData, roleId, updates) => {
+    console.log(roleId)
+    console.log(updates)
+    if (!fetchData) {
+        console.error("❌ Error: `fetchData` no está definido.");
+        throw new Error("fetchData no está disponible.");
+    }
+
     try {
-        const updatedRole = await updateRole(fetchData, roleId, updates);
-        setRoles((prevRoles) => prevRoles.map((r) => (r.id === roleId ? updatedRole : r)));
-        console.log(`✅ Rol actualizado [ID ${roleId}]:`, updatedRole);
-        return updatedRole;
+        return await updateRole(fetchData, roleId, updates);
     } catch (error) {
-        console.error("❌ Error al actualizar rol:", error);
-        setError(error.message || "Error al actualizar rol.");
-        return null;
-    } finally {
-        setIsLoading(false);
+        console.error(`❌ Error al actualizar rol [ID ${roleId}]:`, error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || "Error al actualizar rol.");
     }
 };
 
-export const deleteRoleById = async (fetchData, setRoles, setIsLoading, setError, roleId) => {
-    setIsLoading(true);
+export const deleteRoleById = async (fetchData, roleId) => {
+    if (!fetchData) {
+        console.error("❌ Error: `fetchData` no está definido.");
+        throw new Error("fetchData no está disponible.");
+    }
+
     try {
         await deleteRole(fetchData, roleId);
-        setRoles((prevRoles) => prevRoles.filter((r) => r.id !== roleId));
-        console.log(`✅ Rol eliminado [ID ${roleId}]`);
         return true;
     } catch (error) {
-        console.error("❌ Error al eliminar rol:", error);
-        setError(error.message || "Error al eliminar rol.");
-        return false;
-    } finally {
-        setIsLoading(false);
+        console.error(`❌ Error al eliminar rol [ID ${roleId}]:`, error.response?.data || error.message);
+        throw new Error(error.response?.data?.message || "Error al eliminar rol.");
     }
 };

@@ -1,7 +1,6 @@
 package com.comparathor.model;
 
 import lombok.*;
-
 import java.time.LocalDateTime;
 
 @Getter

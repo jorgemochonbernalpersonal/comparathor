@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.comparathor.repository.ComparisonProductRepository">
+
+    <!-- Insertar múltiples productos en una comparación -->
+    <insert id="insertMultipleComparisonProducts">
+        INSERT INTO comparison_products (comparison_id, product_id)
+        VALUES
+        <foreach collection="productIds" item="productId" separator=",">
+            (#{comparisonId}, #{productId})
+        </foreach>
+    </insert>
+
+    <!-- Buscar una relación específica por ID -->
+    <select id="findById" parameterType="Long" resultType="com.comparathor.model.ComparisonProduct">
+        SELECT id, comparison_id, product_id, created_at, updated_at
+        FROM comparison_products
+        WHERE id = #{id}
+    </select>
+
+    <!-- Eliminar todas las relaciones de productos para una comparación -->
+    <delete id="deleteByComparisonId">
+        DELETE FROM comparison_products WHERE comparison_id = #{comparisonId}
+    </delete>
+
+    <!-- Obtener todos los IDs de productos asociados a una comparación -->
+    <select id="findProductIdsByComparisonId" resultType="long">
+        SELECT product_id FROM comparison_products WHERE comparison_id = #{comparisonId}
+    </select>
+
+    <!-- Obtener detalles de los productos asociados a una comparación -->
+    <select id="findProductsByComparisonId" resultType="map">
+        SELECT
+            p.id AS productId,
+            p.name AS productName,
+            p.category,
+            p.price,
+            p.stock,
+            p.description,
+            p.brand,
+            p.model,
+            p.image_url,
+            p.created_at,
+            p.updated_at
+        FROM products p
+                 INNER JOIN comparison_products cp ON p.id = cp.product_id
+        WHERE cp.comparison_id = #{comparisonId}
+    </select>
+
+</mapper>

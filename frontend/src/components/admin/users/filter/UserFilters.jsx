@@ -1,110 +1,119 @@
-import React, { useState } from "react";
-import Modal from "../../../shared/Modal"; 
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
+import { translate } from "../../../../utils/Translate";
+import FilterModal from "../../../shared/FilterModal";
+import { TextField, MenuItem, FormControl, InputLabel, Select, FormHelperText } from "@mui/material";
 
-const UserFilters = ({ show, onClose, onApplyFilters, roles = [] }) => {
-    const [filters, setFilters] = useState({
-        startDate: "",
-        endDate: "",
-        role_id: "",
-    });
-
+const UserFilters = ({ open, onClose, onApplyFilters, roles = [] }) => { 
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [filters, setFilters] = useState({ startDate: "", endDate: "", role_id: "" });
     const [dateError, setDateError] = useState("");
+
+    useEffect(() => {
+        if (open) {
+            setFilters({
+                startDate: searchParams.get("startDate") || "",
+                endDate: searchParams.get("endDate") || "",
+                role_id: searchParams.get("roleId") || "",
+            });
+            setDateError("");
+        }
+    }, [open]);
+
+    const validateDates = (start, end) => {
+        if (!start && !end) return setDateError(""), true;
+        if (!start || !end) return setDateError(translate("admin.user.filter.dateRequired")), false;
+        if (new Date(start) > new Date(end)) return setDateError(translate("admin.user.filter.dateError")), false;
+        return setDateError(""), true;
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         setFilters((prev) => {
             const updatedFilters = { ...prev, [name]: value };
-
-            if (updatedFilters.startDate && updatedFilters.endDate) {
-                const start = new Date(updatedFilters.startDate);
-                const end = new Date(updatedFilters.endDate);
-
-                if (start > end) {
-                    setDateError("La fecha 'Hasta' no puede ser menor que 'Desde'");
-                } else {
-                    setDateError("");
-                }
-            }
-
+            validateDates(updatedFilters.startDate, updatedFilters.endDate);
             return updatedFilters;
         });
     };
 
     const handleApplyFilters = () => {
-        if (!dateError) {
-            onApplyFilters(filters);
-            onClose();
-        }
+        if (!validateDates(filters.startDate, filters.endDate)) return;
+
+        const params = {
+            ...(filters.role_id && { roleId: filters.role_id }),
+            ...(filters.startDate && { startDate: filters.startDate }),
+            ...(filters.endDate && { endDate: filters.endDate }),
+        };
+
+        setSearchParams(params);
+        onApplyFilters(filters);
+        onClose();
     };
 
     const handleClearFilters = () => {
-        setFilters({ startDate: "", endDate: "", role_id: "" });
+        const clearedFilters = { startDate: "", endDate: "", role_id: "" };
+        setFilters(clearedFilters);
         setDateError("");
-        onApplyFilters({ startDate: "", endDate: "", role_id: "" }); 
+        setSearchParams({});
+        onApplyFilters(clearedFilters);
+        onClose();
     };
 
     return (
-        <Modal title="Filtros Avanzados" onClose={onClose} show={show}>
-            <div className="mb-3">
-                <label>Desde:</label>
-                <input
+        <FilterModal
+            open={open} 
+            onClose={onClose}
+            onClear={handleClearFilters}
+            onApply={handleApplyFilters}
+            title={translate("admin.user.filter.title")}
+            disableApply={!!dateError}
+        >
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.user.filter.from")}
                     type="date"
                     name="startDate"
-                    className={`form-control ${dateError ? "is-invalid" : ""}`}
+                    InputLabelProps={{ shrink: true }}
                     value={filters.startDate}
                     onChange={handleChange}
+                    error={!!dateError}
                 />
-            </div>
-            <div className="mb-3">
-                <label>Hasta:</label>
-                <input
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.user.filter.to")}
                     type="date"
                     name="endDate"
-                    className={`form-control ${dateError ? "is-invalid" : ""}`}
+                    InputLabelProps={{ shrink: true }}
                     value={filters.endDate}
                     onChange={handleChange}
+                    error={!!dateError}
+                    helperText={dateError}
                 />
-                {dateError && <div className="text-danger">{dateError}</div>}
-            </div>
-            <div className="mb-3">
-                <label>Rol:</label>
-                <select
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <InputLabel>{translate("admin.user.filter.role")}</InputLabel>
+                <Select
                     name="role_id"
-                    className="form-select"
                     value={filters.role_id}
                     onChange={handleChange}
                 >
-                    <option value="">Todos los Roles</option>
+                    <MenuItem value="">{translate("admin.user.filter.selectRole")}</MenuItem>
                     {roles.length > 0 ? (
                         roles.map((role) => (
-                            <option key={role._id} value={role._id}>
-                                {role.role}
-                            </option>
+                            <MenuItem key={role.id} value={role.id}>
+                                {role.name}
+                            </MenuItem>
                         ))
                     ) : (
-                        <option disabled>Cargando roles...</option>
+                        <MenuItem disabled>{translate("admin.user.filter.loadingRoles")}</MenuItem>
                     )}
-                </select>
-            </div>
-            <div className="d-flex justify-content-between">
-                <button className="btn btn-outline-danger" onClick={handleClearFilters}>
-                    Limpiar Filtros
-                </button>
-                <div>
-                    <button className="btn btn-secondary me-2" onClick={onClose}>
-                        Cancelar
-                    </button>
-                    <button
-                        className="btn btn-primary"
-                        onClick={handleApplyFilters}
-                        disabled={dateError}
-                    >
-                        Aplicar Filtros
-                    </button>
-                </div>
-            </div>
-        </Modal>
+                </Select>
+                <FormHelperText>{translate("admin.user.filter.selectRole")}</FormHelperText>
+            </FormControl>
+        </FilterModal>
     );
 };
 

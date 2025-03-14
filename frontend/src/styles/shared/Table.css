@@ -1,0 +1,39 @@
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+    margin-bottom: 50px; 
+    padding-bottom: 20px; 
+}
+
+.pagination-container button {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+}
+
+
+.sortable-th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    padding-right: 20px;
+}
+
+.sortable-th:hover {
+    background-color: #007bff !important;
+    color: white;
+    transition: background 0.3s ease-in-out;
+}
+
+.sort-icon {
+    font-size: 0.9rem;
+    margin-left: 8px;
+    color: #fff;
+}

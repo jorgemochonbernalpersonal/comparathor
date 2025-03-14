@@ -4,7 +4,7 @@
 
 <mapper namespace="com.comparathor.repository.UserRepository">
 
-    <!-- Mapeo de resultados para User -->
+    <!-- 🟢 Mapeo de resultados para User -->
     <resultMap id="UserResultMap" type="com.comparathor.model.User">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
@@ -24,25 +24,31 @@
         JOIN roles r ON r.id = u.role_id
         WHERE 1=1
 
-        <if test="roleName != null and roleName != ''">
-            AND r.name = #{roleName}
-        </if>
+        <include refid="UserFilterConditions"/>
 
-        <if test="searchTerm != null and searchTerm != ''">
-            AND (LOWER(u.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            OR LOWER(u.email) LIKE LOWER(CONCAT('%', #{searchTerm}, '%')))
+        <if test="sortField != null and sortOrder != null">
+            ORDER BY
+            <choose>
+                <when test="sortField == 'name'"> u.name </when>
+                <when test="sortField == 'email'"> u.email </when>
+                <when test="sortField == 'createdAt'"> u.created_at </when>
+                <otherwise> u.created_at </otherwise>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'asc'"> ASC </when>
+                <otherwise> DESC </otherwise>
+            </choose>
         </if>
-
-        <if test="startDate != null">
-            AND u.created_at >= #{startDate}
-        </if>
-
-        <if test="endDate != null">
-            AND u.created_at &lt;= #{endDate}
-        </if>
-
-        ORDER BY u.created_at DESC
         LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 🔍 Buscar usuario por ID -->
+    <select id="findById" parameterType="Long" resultMap="UserResultMap">
+        SELECT u.id, u.name, u.email, u.password, u.created_at,
+               r.id AS role_id, r.name AS role_name
+        FROM users u
+                 JOIN roles r ON r.id = u.role_id
+        WHERE u.id = #{id}
     </select>
 
     <!-- 🔢 Contar usuarios filtrados -->
@@ -52,8 +58,27 @@
         JOIN roles r ON r.id = u.role_id
         WHERE 1=1
 
-        <if test="roleName != null and roleName != ''">
-            AND r.name = #{roleName}
+        <include refid="UserFilterConditions"/>
+    </select>
+
+    <!-- 🔍 Buscar usuario por email -->
+    <select id="findByEmail" resultMap="UserResultMap">
+        SELECT u.id, u.name, u.email, u.password, u.created_at, r.id AS role_id, r.name AS role_name
+        FROM users u
+                 JOIN roles r ON r.id = u.role_id
+        WHERE u.email = #{email}
+    </select>
+
+    <!-- 🟢 Crear usuario -->
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (name, email, password, role_id, created_at, updated_at)
+        VALUES (#{name}, #{email}, #{password}, #{roleId, jdbcType=BIGINT}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <!-- 📌 Condiciones reutilizables para filtros -->
+    <sql id="UserFilterConditions">
+        <if test="roleId != null">
+            AND r.id = #{roleId}
         </if>
 
         <if test="searchTerm != null and searchTerm != ''">
@@ -68,14 +93,27 @@
         <if test="endDate != null">
             AND u.created_at &lt;= #{endDate}
         </if>
-    </select>
-    <!-- 🔍 Buscar usuario por email -->
-    <select id="findByEmail" resultMap="UserResultMap">
-        SELECT u.id, u.name, u.email, u.password, u.created_at, r.id AS role_id, r.name AS role_name
-        FROM users u
-                 JOIN roles r ON r.id = u.role_id
-        WHERE u.email = #{email}
-    </select>
+    </sql>
 
+    <!-- 🔴 Eliminar usuario -->
+    <delete id="delete">
+        DELETE FROM users WHERE id = #{id}
+    </delete>
 
+    <!-- 🔄 Actualizar usuario -->
+    <update id="update">
+        UPDATE users
+        SET name = #{name},
+            email = #{email},
+            role_id = #{roleId},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 🔄 Actualizar solo la contraseña -->
+    <update id="updatePassword">
+        UPDATE users
+        SET password = #{password}, updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
 </mapper>

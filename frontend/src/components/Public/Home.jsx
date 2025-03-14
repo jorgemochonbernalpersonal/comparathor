@@ -1,5 +1,5 @@
 import React from "react";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../hooks/UseAuth";
 import { FaCheckCircle, FaBell, FaStar, FaSearch } from "react-icons/fa";
 import "../../styles/global.css";
 

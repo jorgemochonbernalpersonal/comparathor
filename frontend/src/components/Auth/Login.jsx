@@ -1,62 +1,64 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import AuthForm from "../auth/AuthForm";
-import LoadingSpinner from "../shared/LoadingSpinner";
-import { useAuth } from "../../contexts/AuthContext";
-import { useRole } from "../../hooks/UseRole";
+import * as Yup from "yup";
+import Form from "../shared/Form";
+import { useAuth } from "../../hooks/UseAuth";
+import { ROLES } from "../../utils/Constants";
 
 const Login = () => {
-    const { login, currentUser, setIsAuthenticated } = useAuth();
-    const { isAdmin } = useRole();
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const { login } = useAuth();
     const navigate = useNavigate();
+    const [errorMessage, setErrorMessage] = useState(null);
 
-    const formFields = [
-        { name: "email", label: "Correo Electrónico", type: "email", required: true },
-        { name: "password", label: "Contraseña", type: "password", required: true },
-    ];
-
-    const handleSubmit = async (values, { setSubmitting }) => {
-        setError("");
-        setLoading(true);
-        try {
-            const response = await login({
-                email: values.email,
-                password: values.password,
-            });
-
-            if (!response || !response.accessToken || !response.refreshToken) {
-                throw new Error("No se recibieron tokens en la respuesta del servidor.");
-            }
-
-            localStorage.setItem("accessToken", response.accessToken);
-            localStorage.setItem("refreshToken", response.refreshToken);
-            localStorage.setItem("user", JSON.stringify(response.user));
-            setIsAuthenticated(true);
-        } catch (err) {
-            setError(err.message);
-        }
-        setLoading(false);
-        setSubmitting(false);
+    const initialValues = {
+        email: "",
+        password: "",
     };
 
-    useEffect(() => {
-        if (currentUser) {
-            if (isAdmin) {
-                navigate("/admin");
-            } else {
-                navigate("/dashboard");
-            }
-        }
-    }, [currentUser, isAdmin, navigate]);
+    const validationSchema = Yup.object({
+        email: Yup.string()
+            .email("Correo electrónico inválido.")
+            .required("El correo electrónico es requerido."),
+        password: Yup.string()
+            .required("La contraseña es requerida.")
+            .min(6, "La contraseña debe tener al menos 6 caracteres."),
+    });
 
+    const formFields = [
+        { name: "email", label: "Correo Electrónico", type: "email" },
+        { name: "password", label: "Contraseña", type: "password" },
+    ];
+
+    const handleSubmit = async (values, actions) => {
+        try {
+            const response = await login(values);
+            const user = response?.user || null;
+
+            const roleName = user?.role?.name || "";
+            navigate(roleName === ROLES.ADMIN ? "/admin" : "/user");
+        } catch (error) {
+            let errorMsg = error?.response?.data?.message || error?.message || "❌ Error al procesar la solicitud.";
+            setErrorMessage(errorMsg);
+        } finally {
+            actions.setSubmitting(false);
+        }
+    };
+    
     return (
         <div>
-            <div>
-                {error && <div className="error-message">{error}</div>}
-                {loading ? <LoadingSpinner size="medium" color="#007BFF" /> : <AuthForm fields={formFields} onSubmit={handleSubmit} submitText="Ingresar" />}
+        {errorMessage && (
+            <div className="alert alert-danger text-center">
+                {errorMessage}
             </div>
+        )}
+            <Form
+                title="🔑 Iniciar Sesión"
+                fields={formFields}
+                initialValues={initialValues}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+                submitText="Ingresar"
+            />
         </div>
     );
 };

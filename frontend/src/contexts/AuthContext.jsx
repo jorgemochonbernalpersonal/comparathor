@@ -1,129 +1,132 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
-import { useFetch } from "../hooks/UseFetch";
+import React, { createContext, useEffect, useState, useRef } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useNavigate, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import { login, register, refreshToken, logout } from "../api/auth/AuthLogic";
-import { ROLES } from "../utils/Constants";
+import { useFetch } from "../hooks/UseFetch";
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const { fetchData } = useFetch();
-
-    const [isLoading, setIsLoading] = useState(true);
-    const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("accessToken"));
-    const [currentUser, setCurrentUser] = useState(() => {
-        try {
-            const user = localStorage.getItem("user");
-            return user ? JSON.parse(user) : null;
-        } catch (error) {
-            console.error("❌ Error al recuperar usuario de localStorage:", error);
-            localStorage.removeItem("user");
-            return null;
-        }
+    const queryClient = useQueryClient();
+    const navigate = useNavigate();
+    const location = useLocation();
+    const hasInitialized = useRef(false); 
+    const [isAuthLoading, setIsAuthLoading] = useState(true);
+    const [user, setUser] = useState(() => {
+        const storedUser = localStorage.getItem("user");
+        return storedUser ? JSON.parse(storedUser) : null;
     });
 
     useEffect(() => {
-        const initializeAuth = async () => {
-            const token = localStorage.getItem("accessToken");
-            if (token) {
+        const initializeSession = async () => {
+            if (hasInitialized.current) return;
+            hasInitialized.current = true;
+
+            setIsAuthLoading(true);
+
+            const storedUser = localStorage.getItem("user");
+            const accessToken = localStorage.getItem("accessToken");
+            const refreshTokenValue = localStorage.getItem("refreshToken");
+
+            if (storedUser && accessToken && refreshTokenValue) {
                 try {
                     const newToken = await refreshToken(fetchData);
-                    if (!newToken) {
-                        alert("Tu sesión ha expirado. Vuelve a iniciar sesión.");
+                    if (newToken?.accessToken) {
+                        localStorage.setItem("accessToken", newToken.accessToken);
+                        const parsedUser = JSON.parse(storedUser);
+                        queryClient.setQueryData(["currentUser"], parsedUser);
+                        setUser(parsedUser); 
+
+                        if (parsedUser.role?.name === "ROLE_ADMIN" && location.pathname === "/") {
+                            navigate("/admin", { replace: true });
+                        } else if (parsedUser.role?.name === "ROLE_REGISTERED" && location.pathname === "/") {
+                            navigate("/user", { replace: true });
+                        }
+                    } else {
                         handleLogout();
                     }
                 } catch (error) {
-                    console.error("❌ Error al refrescar token:", error);
                     handleLogout();
                 }
             }
-            setIsLoading(false);
+
+            setIsAuthLoading(false);
         };
-        initializeAuth();
-    }, []);
 
-    const handleLogin = async (credentials) => {
-        try {
-            const response = await login(fetchData, credentials);
-            if (response) {
-                storeUserSession(response);
-            }
-            return response;
-        } catch (error) {
-            console.error("❌ Error al iniciar sesión:", error);
-            throw error;
-        }
+        initializeSession();
+    }, [queryClient, fetchData, navigate, location.pathname]);
+
+    const handleLogout = () => {
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("user");
+        queryClient.setQueryData(["currentUser"], null);
+        queryClient.clear();
+        setUser(null);
+        navigate("/login", { replace: true });
     };
 
-    const handleRegister = async (userData) => {
-        try {
-            const response = await register(fetchData, userData);
-            if (response) {
-                storeUserSession(response);
-            }
-            return response;
-        } catch (error) {
-            console.error("❌ Error al registrar usuario:", error);
-            throw error;
-        }
-    };
+    const loginMutation = useMutation({
+        mutationFn: (credentials) => login(fetchData, credentials),
+        onSuccess: (data) => {
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("refreshToken", data.refreshToken);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            queryClient.setQueryData(["currentUser"], data.user);
+            setUser(data.user);
+            toast.success("✅ Inicio de sesión exitoso");
+            const roleName = data.user?.role || "";
+            navigate(roleName === "ROLE_ADMIN" ? "/admin" : "/user");
+        },
+        onError: (error) => {
+            toast.error("❌ Error al iniciar sesión");
+        },
+    });
 
-    const storeUserSession = async (response) => {
-        localStorage.setItem("accessToken", response.accessToken);
-        localStorage.setItem("refreshToken", response.refreshToken);
-        localStorage.setItem("user", JSON.stringify(response.user));
-        await new Promise((resolve) => setTimeout(resolve, 100)); // Esperar que el estado se actualice
-        setCurrentUser(response.user);
-        setIsAuthenticated(true);
-    };
-    
+    const registerMutation = useMutation({
+        mutationFn: (userData) => register(fetchData, userData),
+        onSuccess: (data) => {
+            localStorage.setItem("accessToken", data.accessToken);
+            localStorage.setItem("refreshToken", data.refreshToken);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            queryClient.setQueryData(["currentUser"], data.user);
+            setUser(data.user);
+            toast.success("✅ Registro exitoso");
+            const roleName = data.user?.role || "";
+            navigate(roleName === "ROLE_ADMIN" ? "/admin" : "/user");
+        },
+        onError: (error) => {
+            toast.error("❌ Error al registrarse");
+        },
+    });
 
-    const handleRefreshToken = async () => {
-        try {
-            return await refreshToken(fetchData);
-        } catch (error) {
-            console.error("❌ Error al refrescar token:", error);
-            handleLogout();
-            return null;
-        }
-    };
-
-    const handleLogout = async () => {
-        try {
+    const logoutMutation = useMutation({
+        mutationFn: async () => {
             await logout(fetchData);
-        } catch (error) {
-            console.error("❌ Error en logout:", error);
-        } finally {
-            localStorage.clear();
-            setCurrentUser(null);
-            setIsAuthenticated(false);
-        }
-    };
+        },
+        onSuccess: handleLogout,
+        onError: (error) => {
+            toast.error("❌ Error al cerrar sesión");
+            handleLogout();
+        },
+    });
 
-    const role = useMemo(() => currentUser?.role?.name || ROLES.REGISTERED, [currentUser]);
-    console.log("Rol actual:", role); // Verifica en consola
-    
-    const isAdmin = role === ROLES.ADMIN;
-    console.log("¿Es Admin?", isAdmin);
-    
 
     return (
         <AuthContext.Provider
             value={{
-                currentUser,
-                role,
-                isAdmin,
-                isAuthenticated,
-                setIsAuthenticated,
-                isLoading,
-                login: handleLogin,
-                register: handleRegister,
-                refreshToken: handleRefreshToken,
-                logout: handleLogout,
+                user,
+                setUser,
+                isAuthenticated: !!user,
+                role: user?.role || null,
+                login: loginMutation.mutateAsync,
+                register: registerMutation.mutateAsync,
+                logout: logoutMutation.mutateAsync,
             }}
         >
-            {!isLoading && children}
+            {children}
         </AuthContext.Provider>
     );
 };
-
-export const useAuth = () => useContext(AuthContext);

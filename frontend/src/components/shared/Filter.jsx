@@ -1,6 +1,12 @@
 import React, { useState } from "react";
+import { Box, TextField, Button } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
+import FilterListIcon from "@mui/icons-material/FilterList";
+import AddIcon from "@mui/icons-material/Add";
+import { useTranslation } from "react-i18next";
 
 const Filter = ({ onSearch, onOpenFilters, onCreate, FilterComponent, onFilter, closeModal }) => {
+    const { t } = useTranslation();
     const [searchTerm, setSearchTerm] = useState("");
 
     const handleSearchChange = (e) => {
@@ -9,35 +15,44 @@ const Filter = ({ onSearch, onOpenFilters, onCreate, FilterComponent, onFilter, 
     };
 
     return (
-        <div>
+        <Box>
             {!FilterComponent ? (
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <div className="input-group" style={{ maxWidth: "300px" }}>
-                        <input
-                            type="text"
-                            className="form-control"
-                            placeholder="Buscar..."
-                            value={searchTerm}
-                            onChange={handleSearchChange}
-                        />
-                        <button className="btn btn-outline-secondary" type="button" onClick={() => onSearch(searchTerm)}>
-                            🔍
-                        </button>
-                    </div>
-                    <div>
-                        <button className="btn btn-outline-primary me-2" type="button" onClick={onOpenFilters}>
-                            Filters
-                        </button>
-                        <button className="btn btn-primary" type="button" onClick={onCreate}>
-                            + Crear
-                        </button>
-                        
-                    </div>
-                </div>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
+                    <TextField
+                        variant="outlined"
+                        size="small"
+                        label={t("shared.filter.searchPlaceholder")}
+                        value={searchTerm}
+                        onChange={handleSearchChange}
+                        sx={{ maxWidth: "300px", mr: 2 }}
+                        InputProps={{
+                            endAdornment: (
+                                <Button onClick={() => onSearch(searchTerm)} sx={{ minWidth: 40 }}>
+                                    <SearchIcon />
+                                </Button>
+                            ),
+                        }}
+                    />
+
+                    <Box>
+                        <Button
+                            variant="outlined"
+                            startIcon={<FilterListIcon />}
+                            onClick={onOpenFilters}
+                            sx={{ mr: 2 }}
+                        >
+                            {t("shared.filter.filters")}
+                        </Button>
+
+                        <Button variant="contained" startIcon={<AddIcon />} onClick={onCreate}>
+                            {t("shared.filter.create")}
+                        </Button>
+                    </Box>
+                </Box>
             ) : (
                 <FilterComponent onFilter={onFilter} closeModal={closeModal} />
             )}
-        </div>
+        </Box>
     );
 };
 

@@ -1,0 +1,57 @@
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 20px;
+    padding: 20px;
+    justify-content: center;
+    text-align: center;
+}
+
+.dashboard-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 18px;
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.dashboard-card i {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.blue {
+    background-color: #007bff;
+}
+
+.green {
+    background-color: #28a745;
+}
+
+.purple {
+    background-color: #6f42c1;
+}
+
+.teal {
+    background-color: #17a2b8;
+}
+
+.active-card {
+    border: 3px solid white;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.inactive-card {
+    opacity: 0.8;
+}
