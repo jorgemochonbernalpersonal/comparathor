@@ -3,6 +3,7 @@ package com.comparathor.controller;
 import com.comparathor.exception.BadRequestException;
 import com.comparathor.exception.ForbiddenException;
 import com.comparathor.model.Comparison;
+import com.comparathor.model.Product;
 import com.comparathor.service.ComparisonService;
 import com.comparathor.service.UserSecurityService;
 import lombok.RequiredArgsConstructor;
@@ -42,21 +43,11 @@ public class ComparisonController {
             @RequestParam(name = "stock", required = false) Integer stock,
             @RequestParam(name = "brand", required = false) String brand,
             @RequestParam(name = "model", required = false) String model,
-            @RequestParam(name = "comparisonIds", required = false) List<Long> comparisonIds // 🔥 NUEVO
+            @RequestParam(name = "comparisonIds", required = false) List<Long> comparisonIds
     ) {
-        System.out.println("🔎 [Controller] Petición recibida para obtener comparaciones");
-        System.out.println("📥 Parámetros: userId=" + userId + ", title=" + title +
-                ", startDate=" + startDate + ", endDate=" + endDate);
-        System.out.println("📥 Filtros: name=" + name + ", category=" + category +
-                ", price=" + price + ", stock=" + stock +
-                ", brand=" + brand + ", model=" + model);
-        System.out.println("📥 Comparaciones seleccionadas: " + (comparisonIds != null ? comparisonIds : "Ninguna"));
-
         validateAccess(token);
-
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? startDate.atTime(23, 59, 59) : null;
-
         return comparisonService.getFilteredComparisons(
                 userId, title, startDateTime, endDateTime, page, size, sortField, sortOrder,
                 name, category, price, stock, brand, model, comparisonIds
@@ -71,14 +62,14 @@ public class ComparisonController {
         validateAccess(token);
 
         if (!request.containsKey("userId") || !request.containsKey("title") || !request.containsKey("productIds")) {
-            throw new BadRequestException("❌ Se requiere userId, title y productIds.");
+            throw new BadRequestException("Se requiere userId, title y productIds.");
         }
 
         Long userId;
         try {
             userId = Long.parseLong(request.get("userId").toString());
         } catch (NumberFormatException e) {
-            throw new BadRequestException("❌ userId debe ser un número válido.");
+            throw new BadRequestException("userId debe ser un número válido.");
         }
 
         String title = request.get("title").toString();
@@ -90,7 +81,7 @@ public class ComparisonController {
                     .map(p -> Long.parseLong(p.toString()))
                     .toList();
         } catch (Exception e) {
-            throw new BadRequestException("❌ productIds debe ser una lista de números.");
+            throw new BadRequestException("productIds debe ser una lista de números.");
         }
 
         Map<String, Object> response = comparisonService.createComparison(userId, title, description, productIds);
@@ -103,10 +94,9 @@ public class ComparisonController {
     public ResponseEntity<Comparison> getComparisonById(@RequestHeader("Authorization") String token, @PathVariable Long id) {
         validateAccess(token);
         if (id == null || id <= 0) {
-            throw new BadRequestException("❌ ID de comparación inválido.");
+            throw new BadRequestException("ID de comparación inválido.");
         }
         Comparison comparison = comparisonService.getComparisonById(id);
-        logger.info("✅ Comparación recuperada con ID: {}", id);
         return ResponseEntity.ok(comparison);
     }
 
@@ -117,7 +107,7 @@ public class ComparisonController {
         validateAccess(token);
 
         if (id == null || id <= 0) {
-            throw new BadRequestException("❌ ID de comparación inválido.");
+            throw new BadRequestException("ID de comparación inválido.");
         }
 
         String title = request.containsKey("title") ? request.get("title").toString() : null;
@@ -169,11 +159,11 @@ public class ComparisonController {
     }
 
     @GetMapping("/{comparisonId}/products")
-    public ResponseEntity<List<Map<String, Object>>> getComparisonProducts(
+    public ResponseEntity<List<Product>> getComparisonProducts(
             @RequestHeader("Authorization") String token,
             @PathVariable Long comparisonId) {
         validateAccess(token);
-        List<Map<String, Object>> products = comparisonService.getProductsByComparisonId(comparisonId);
+        List<Product> products = comparisonService.getProductsByComparisonId(comparisonId);
         return ResponseEntity.ok(products);
     }
 }

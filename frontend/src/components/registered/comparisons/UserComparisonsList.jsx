@@ -29,6 +29,8 @@ const UserComparisonsList = () => {
 
     const { comparisons, refetchComparisons } = useComparison(filters);
 
+    console.log(comparisons)
+
     useEffect(() => {
         refetchComparisons(filters);
     }, [filters, refetchComparisons]);
@@ -38,7 +40,7 @@ const UserComparisonsList = () => {
         if (value.length <= MAX_COMPARISONS) {
             setSelectedComparisons(value);
         } else {
-            alert(`⚠️ Solo puedes seleccionar un máximo de ${MAX_COMPARISONS} comparaciones.`);
+            alert(`Solo puedes seleccionar un máximo de ${MAX_COMPARISONS} comparaciones.`);
         }
     };
 

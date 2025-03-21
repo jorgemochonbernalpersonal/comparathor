@@ -1,11 +1,10 @@
 package com.comparathor.repository;
 
 import com.comparathor.model.ComparisonProduct;
+import com.comparathor.model.Product;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
-import java.util.Map;
-
 
 @Mapper
 public interface ComparisonProductRepository {
@@ -13,5 +12,5 @@ public interface ComparisonProductRepository {
     ComparisonProduct findById(@Param("id") Long id);
     void deleteByComparisonId(@Param("comparisonId") Long comparisonId);
     List<Long> findProductIdsByComparisonId(@Param("comparisonId") Long comparisonId);
-    List<Map<String, Object>> findProductsByComparisonId(@Param("comparisonId") Long comparisonId);
+    List<Product> findProductsByComparisonId(@Param("comparisonId") Long comparisonId);
 }

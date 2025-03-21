@@ -66,7 +66,7 @@ const ComparisonList = () => {
             await deleteComparison(comparison.id);
             setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), page: "1" }));
         } catch (error) {
-            console.error("❌ Error deleting comparison:", error);
+            console.error("❌ rror deleting comparison:", error);
         }
     };
 

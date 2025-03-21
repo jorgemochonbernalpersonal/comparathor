@@ -35,14 +35,14 @@ const RegisteredDashboard = () => {
                     <i className="bi bi-star"></i>
                     <h3>{translate("registered.dashboard.ratings", { defaultValue: "Ratings" })}</h3>
                 </Link>
-
+{/* 
                 <Link
                     to="/user/profile"
                     className={`dashboard-card teal ${location.pathname === "/user/profile" ? "active-card" : "inactive-card"}`}
                 >
                     <i className="bi bi-person"></i>
                     <h3>{translate("registered.dashboard.profile", { defaultValue: "My Profile" })}</h3>
-                </Link>
+                </Link> */}
             </div>
 
             {isDashboard && (

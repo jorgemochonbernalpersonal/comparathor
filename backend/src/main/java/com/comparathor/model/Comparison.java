@@ -1,7 +1,6 @@
 package com.comparathor.model;
 
 import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,4 +17,5 @@ public class Comparison {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<Long> productIds;
+    private List<Product> products;
 }

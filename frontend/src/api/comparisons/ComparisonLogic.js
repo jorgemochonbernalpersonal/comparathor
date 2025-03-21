@@ -8,7 +8,6 @@ import {
 } from "./ComparisonRequest";
 
 export const getAllComparisons = async (fetchData, filters = {}) => {
-    console.log('coco')
     try {
         const queryParams = new URLSearchParams({
             page: filters.page ?? 0,
@@ -16,9 +15,6 @@ export const getAllComparisons = async (fetchData, filters = {}) => {
             sortField: filters.sortField ?? "createdAt",
             sortOrder: filters.sortOrder ?? "desc",
         });
-
-        console.log("📡 Enviando petición con userId:", filters);
-
 
         if (filters.userId) queryParams.append("userId", filters.userId);
         if (filters.title?.trim()) queryParams.append("title", filters.title.trim());
@@ -35,9 +31,9 @@ export const getAllComparisons = async (fetchData, filters = {}) => {
         if (filters.comparisonIds?.length > 0) {
             filters.comparisonIds.forEach(id => queryParams.append("comparisonIds", id));
         }
-
         const endpoint = `comparisons?${queryParams.toString()}`;
         const response = await fetchAllComparisons(fetchData, endpoint);
+
 
         console.log(response)
 
@@ -50,7 +46,7 @@ export const getAllComparisons = async (fetchData, filters = {}) => {
             })) ?? [],
         };
     } catch (error) {
-        throw new Error(error.message || "❌ Error al obtener comparaciones.");
+        throw new Error(error.message || "Error al obtener comparaciones.");
     }
 };
 
@@ -114,7 +110,6 @@ export const deleteComparisonById = async (fetchData, comparisonId) => {
 };
 
 export const getProductsByComparisonId = async (fetchData, comparisonId) => {
-    console.log('sisi')
     try {
         const products = await fetchProductsByComparisonId(fetchData, comparisonId);
         if (!products) return [];

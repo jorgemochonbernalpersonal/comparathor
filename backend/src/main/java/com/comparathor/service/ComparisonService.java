@@ -3,6 +3,7 @@ package com.comparathor.service;
 import com.comparathor.exception.BadRequestException;
 import com.comparathor.exception.ResourceNotFoundException;
 import com.comparathor.model.Comparison;
+import com.comparathor.model.Product;
 import com.comparathor.repository.ComparisonRepository;
 import com.comparathor.repository.ComparisonProductRepository;
 import org.springframework.stereotype.Service;
@@ -27,9 +28,8 @@ public class ComparisonService {
     public Comparison getComparisonById(Long id) {
         Comparison comparison = comparisonRepository.findById(id);
         if (comparison == null) {
-            throw new ResourceNotFoundException("❌ Comparación no encontrada con ID: " + id);
-        }
-        comparison.setProductIds(comparisonProductRepository.findProductIdsByComparisonId(id));
+            throw new ResourceNotFoundException("Comparación no encontrada con ID: " + id);
+        }comparison.setProductIds(comparisonProductRepository.findProductIdsByComparisonId(id));
         return comparison;
     }
 
@@ -38,22 +38,8 @@ public class ComparisonService {
             Long userId, String title, LocalDateTime startDate, LocalDateTime endDate,
             int page, int size, String sortField, String sortOrder,
             String name, String category, Double price, Integer stock, String brand, String model,
-            List<Long> comparisonIds // 🔥 NUEVO: Filtrar por IDs de comparaciones seleccionadas
+            List<Long> comparisonIds
     ) {
-        System.out.println("🔎 [Service] getFilteredComparisons ejecutado");
-        System.out.println("📥 Parámetros recibidos en el servicio:");
-        System.out.println("   - userId: " + userId);
-        System.out.println("   - title: " + title);
-        System.out.println("   - startDate: " + startDate);
-        System.out.println("   - endDate: " + endDate);
-        System.out.println("   - name: " + name);
-        System.out.println("   - category: " + category);
-        System.out.println("   - price: " + price);
-        System.out.println("   - stock: " + stock);
-        System.out.println("   - brand: " + brand);
-        System.out.println("   - model: " + model);
-        System.out.println("   - comparisonIds: " + (comparisonIds != null ? comparisonIds : "No filtrado"));
-
         size = Math.max(size, 10);
 
         int totalComparisons;
@@ -61,15 +47,11 @@ public class ComparisonService {
             totalComparisons = comparisonRepository.countFilteredComparisons(
                     userId, title, startDate, endDate, name, category, price, stock, brand, model, comparisonIds
             );
-            System.out.println("✅ Total de comparaciones encontradas: " + totalComparisons);
         } catch (Exception e) {
-            System.err.println("❌ Error al contar comparaciones: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Error al contar comparaciones", e);
         }
 
         int offset = Math.max(0, (page * size >= totalComparisons) ? totalComparisons - size : page * size);
-        System.out.println("📊 Offset calculado: " + offset);
 
         List<Comparison> comparisons;
         try {
@@ -77,23 +59,14 @@ public class ComparisonService {
                     userId, title, startDate, endDate, name, category, price, stock, brand, model,
                     comparisonIds, size, offset, sortField, sortOrder
             );
-            System.out.println("✅ Comparaciones obtenidas: " + comparisons.size());
         } catch (Exception e) {
-            System.err.println("❌ Error al obtener comparaciones: " + e.getMessage());
-            e.printStackTrace();
             throw new RuntimeException("Error al obtener comparaciones", e);
         }
 
-        try {
-            comparisons.forEach(comparison -> {
-                List<Long> productIds = comparisonProductRepository.findProductIdsByComparisonId(comparison.getId());
-                comparison.setProductIds(productIds);
-                System.out.println("🛒 Productos encontrados para comparación ID " + comparison.getId() + ": " + productIds);
-            });
-        } catch (Exception e) {
-            System.err.println("❌ Error al obtener productos de comparaciones: " + e.getMessage());
-            e.printStackTrace();
-            throw new RuntimeException("Error al obtener productos de comparaciones", e);
+        for (Comparison comparison : comparisons) {
+            List<Long> productIds = comparisonProductRepository.findProductIdsByComparisonId(comparison.getId());
+            comparison.setProductIds(productIds);
+            comparison.setProducts(comparisonProductRepository.findProductsByComparisonId(comparison.getId()));
         }
 
         Map<String, Object> response = new HashMap<>();
@@ -101,17 +74,14 @@ public class ComparisonService {
         response.put("total", totalComparisons);
         response.put("page", page);
         response.put("size", size);
-
-        System.out.println("📦 Respuesta generada con éxito.");
         return response;
     }
-
 
 
     @Transactional
     public Map<String, Object> createComparison(Long userId, String title, String description, List<Long> productIds) {
         if (title == null || title.trim().isEmpty()) {
-            throw new BadRequestException("❌ El título de la comparación es obligatorio.");
+            throw new BadRequestException("El título de la comparación es obligatorio.");
         }
         Comparison newComparison = new Comparison();
         newComparison.setUserId(userId);
@@ -178,9 +148,9 @@ public class ComparisonService {
     }
 
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> getProductsByComparisonId(Long comparisonId) {
+    public List<Product> getProductsByComparisonId(Long comparisonId) {
         if (comparisonId == null || comparisonId <= 0) {
-            throw new BadRequestException("❌ ID de comparación inválido.");
+            throw new BadRequestException("ID de comparación inválido.");
         }
         return comparisonProductRepository.findProductsByComparisonId(comparisonId);
     }
