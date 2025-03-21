@@ -8,6 +8,7 @@ import java.util.List;
 
 @Mapper
 public interface RatingRepository {
+
     void save(Rating rating);
 
     Rating findById(@Param("id") Long id);
@@ -23,8 +24,10 @@ public interface RatingRepository {
                       @Param("comment") String comment,
                       @Param("updatedAt") LocalDateTime updatedAt);
 
+    // 🔍 Filtrar ratings con soporte para minRating
     List<Rating> findFilteredRatings(@Param("productId") Long productId,
                                      @Param("userId") Long userId,
+                                     @Param("minRating") Double minRating,
                                      @Param("startDate") LocalDateTime startDate,
                                      @Param("endDate") LocalDateTime endDate,
                                      @Param("size") int size,
@@ -32,11 +35,12 @@ public interface RatingRepository {
                                      @Param("sortField") String sortField,
                                      @Param("sortOrder") String sortOrder);
 
+    // 🔢 Contar ratings filtrados con minRating
     int countFilteredRatings(@Param("productId") Long productId,
                              @Param("userId") Long userId,
+                             @Param("minRating") Double minRating,
                              @Param("startDate") LocalDateTime startDate,
                              @Param("endDate") LocalDateTime endDate);
 
     List<Rating> findUserRatingForProduct(@Param("productId") Long productId, @Param("userId") Long userId);
-
 }

@@ -33,7 +33,7 @@
                     "emailInvalid": "Formato de correo electrónico inválido",
                     "password": "La contraseña es obligatoria",
                     "passwordMin": "La contraseña debe tener al menos 6 caracteres",
-                    "role": "Es necesario seleccionar un rol"
+                    "role": "Es obligatorio seleccionar un rol"
                 }
             },
             "filter": {
@@ -56,97 +56,41 @@
                 "id": "ID",
                 "name": "Nombre",
                 "category": "Categoría",
+                "brand": "Marca",
                 "price": "Precio",
                 "stock": "Stock",
-                "brand": "Marca",
-                "model": "Modelo",
-                "image": "Imagen",
-                "noImage": "Sin imagen",
-                "created": "Creado",
+                "createdAt": "Creado En",
                 "edit": "Editar",
                 "delete": "Eliminar",
-                "confirmDelete": "¿Estás seguro de que deseas eliminar el producto {name}?",
-                "noProductsFound": "No se encontraron productos.",
-                "editProduct": "Editar Producto",
                 "createProduct": "Crear Producto"
-            },
-            "form": {
-                "category": "Categoría",
-                "name": "Nombre",
-                "description": "Descripción",
-                "brand": "Marca",
-                "model": "Modelo",
-                "price": "Precio",
-                "stock": "Stock",
-                "image": "Imagen",
-                "isPublic": "¿Publicar?",
-                "saveChanges": "Guardar Cambios",
-                "createProduct": "Crear Producto",
-                "cancel": "Cancelar",
-                "saving": "Guardando...",
-                "preview": "Vista Previa de Imagen",
-                "uploadingImage": "Subiendo imagen...",
-                "error": "Ocurrió un error al guardar el producto.",
-                "validation": {
-                    "category": "La categoría es obligatoria",
-                    "name": "El nombre es obligatorio",
-                    "nameMin": "Al menos 2 caracteres",
-                    "description": "La descripción es obligatoria",
-                    "brand": "La marca es obligatoria",
-                    "model": "El modelo es obligatorio",
-                    "price": "El precio es obligatorio",
-                    "pricePositive": "Debe ser un número positivo",
-                    "stock": "El stock es obligatorio",
-                    "stockInteger": "Debe ser un número entero",
-                    "stockMin": "Debe ser al menos 0",
-                    "imageRequired": "La imagen es obligatoria"
-                }
-            },
-            "filter": {
-                "title": "Filtros Avanzados de Productos",
-                "from": "Desde",
-                "to": "Hasta",
-                "category": "Categoría",
-                "selectCategory": "Todas las Categorías",
-                "minPrice": "Precio Mínimo",
-                "maxPrice": "Precio Máximo",
-                "apply": "Aplicar Filtros",
-                "clear": "Limpiar Filtros",
-                "cancel": "Cancelar",
-                "dateError": "La fecha 'Hasta' no puede ser anterior a la fecha 'Desde'",
-                "priceError": "El precio mínimo no puede ser mayor al precio máximo",
-                "loadingCategories": "Cargando categorías..."
             }
         },
         "role": {
             "list": {
                 "roleList": "Lista de Roles",
-                "id": "ID",
-                "name": "Nombre del Rol",
+                "name": "Nombre",
                 "description": "Descripción",
+                "createdAt": "Creado En",
+                "updatedAt": "Actualizado En",
+                "createdBy": "Creado Por",
                 "edit": "Editar",
                 "delete": "Eliminar",
-                "confirmDelete": "¿Estás seguro de que deseas eliminar el rol {name}?",
-                "noRolesFound": "No se encontraron roles.",
-                "editRole": "Editar Rol",
-                "createdAt": "Crear Rol",
-                "updatedAt": "Actualización del Rol",
-                "createdBy": "Rol creado por"
+                "createRole": "Crear Rol"
             },
-            "form": {
-                "name": "Nombre del Rol",
-                "description": "Descripción",
-                "saveChanges": "Guardar Cambios",
-                "createRole": "Crear Rol",
+            "filter": {
+                "title": "Filtros de Rol",
+                "roleName": "Nombre del Rol",
+                "from": "Desde",
+                "to": "Hasta",
+                "updatedFrom": "Actualizado Desde",
+                "updatedTo": "Actualizado Hasta",
+                "createdBy": "Creado Por",
+                "apply": "Aplicar Filtros",
+                "clear": "Limpiar Filtros",
                 "cancel": "Cancelar",
-                "saving": "Guardando...",
-                "error": "Ocurrió un error al guardar el rol.",
-                "validation": {
-                    "name": "El nombre del rol es obligatorio",
-                    "nameMin": "Al menos 2 caracteres",
-                    "descriptionMax": "Máximo 500 caracteres",
-                    "generalError": "Error en la solicitud"
-                }
+                "dateError": "La fecha 'Hasta' no puede ser anterior a la fecha 'Desde'",
+                "loadingRoles": "Cargando roles...",
+                "dateRequired": "Ambas fechas son obligatorias"
             }
         }
     },
@@ -155,7 +99,7 @@
             "home": "Inicio",
             "login": "Iniciar Sesión",
             "register": "Registrarse",
-            "dashboard": "Panel de Control",
+            "dashboard": "Panel",
             "logout": "Cerrar Sesión",
             "adminPanel": "Panel de Administración",
             "userPanel": "Panel de Usuario"
@@ -178,22 +122,12 @@
             "clear": "Limpiar",
             "apply": "Aplicar"
         },
-        "messages": {
-            "loading": "Cargando...",
-            "error": "Ocurrió un error, por favor inténtalo de nuevo.",
-            "success": "Acción completada con éxito."
-        },
         "confirmations": {
             "delete": "¿Estás seguro de que deseas eliminar este elemento?",
-            "unsavedChanges": "Tienes cambios sin guardar. ¿Realmente quieres salir?"
-        },
-        "filterBar": {
-            "searchPlaceholder": "Buscar...",
-            "filters": "Filtros",
-            "create": "Crear"
+            "unsavedChanges": "Tienes cambios sin guardar. ¿Realmente deseas salir?"
         },
         "form": {
-            "imagePreview": "📷 Vista previa"
+            "imagePreview": "📷 Vista Previa de la Imagen"
         },
         "footer": {
             "rights": "Todos los derechos reservados."
@@ -205,13 +139,55 @@
         },
         "loading": {
             "loading": "Cargando..."
+        },
+        "actions": {
+            "clearSelection": "Limpiar Selección",
+            "filter": "Aplicar Filtros"
+        },
+        "filterBar": {
+            "searchPlaceholder": "Buscar...",
+            "filters": "Filtros",
+            "create": "Crear",
+            "uploadExcel": "Subir Excel",
+            "downloadTemplate": "Descargar Plantilla"
+        },
+        "messages": {
+            "uploadSuccess": "Archivo subido correctamente.",
+            "uploadError": "Error al subir el archivo.",
+            "downloadStarted": "Descarga iniciada...",
+            "fileEmptyError": "El archivo no puede estar vacío.",
+            "fileFormatError": "Formato de archivo no soportado. Solo se permiten .xlsx y .ods.",
+            "uploadProcessing": "Procesando subida de archivo...",
+            "roleNotFound": "El rol '{role}' no existe en la base de datos.",
+            "userExists": "El usuario con correo {email} ya está registrado.",
+            "fileSizeExceeded": "El archivo contiene demasiados registros. Máximo permitido: {maxRecords}"
+        },
+        "excel": {
+            "upload": {
+                "title": "Subiendo Archivo...",
+                "processingMessage": "Por favor espera, el archivo se está subiendo...",
+                "errorTitle": "Errores en la Subida",
+                "closeButton": "Cerrar"
+            },
+            "download": {
+                "starting": "Iniciando descarga...",
+                "error": "Error al descargar la plantilla."
+            }
+        },
+        "errors": {
+            "general": "Ocurrió un error inesperado.",
+            "400": "Solicitud Incorrecta",
+            "401": "No Autorizado",
+            "403": "Prohibido",
+            "404": "No Encontrado",
+            "500": "Error Interno del Servidor"
         }
     },
     "registered": {
         "page": {
             "title": "Panel de Usuario",
             "welcomeMessage": "¡Bienvenido a tu panel!",
-            "description": "Aquí puedes ver y gestionar tus productos, comparaciones y reseñas."
+            "description": "Aquí puedes ver y administrar tus productos, comparaciones y reseñas."
         },
         "dashboard": {
             "products": "Productos",
@@ -219,22 +195,25 @@
             "reviews": "Mis Reseñas",
             "profile": "Mi Perfil"
         },
-        "comparison": {
-            "title": "Comparación de Productos",
-            "feature": "Característica",
-            "category": "Categoría",
-            "price": "Precio",
-            "stock": "Stock",
-            "description": "Descripción",
-            "brand": "Marca",
-            "model": "Modelo",
-            "image": "Imagen",
-            "rating": "Calificación",
-            "actions": "Acciones",
-            "remove": "Eliminar",
-            "compareNow": "Comparar Ahora",
-            "noComparison": "No hay productos seleccionados para comparar.",
-            "errorLoading": "Ocurrió un error al cargar la comparación."
+        "userProductList": {
+            "list": {
+                "title": "Lista de Productos",
+                "noProducts": "No hay productos disponibles."
+            },
+            "card": {
+                "stock": "Stock: {{stock}} unidades",
+                "brand": "Marca: {{brand}}",
+                "model": "Modelo: {{model}}",
+                "price": "Precio: €{{price}}",
+                "rating": "Valoración",
+                "review": "Reseña",
+                "rateProduct": "Valorar este producto",
+                "editReview": "Editar Reseña",
+                "noRating": "Sin valoración",
+                "compare": "Comparar",
+                "removeCompare": "Eliminar de la comparación",
+                "noStock": "Agotado"
+            }
         }
     }
 }

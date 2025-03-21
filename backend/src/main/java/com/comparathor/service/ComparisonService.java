@@ -37,32 +37,76 @@ public class ComparisonService {
     public Map<String, Object> getFilteredComparisons(
             Long userId, String title, LocalDateTime startDate, LocalDateTime endDate,
             int page, int size, String sortField, String sortOrder,
-            String name, String category, Double price, Integer stock, String brand, String model
+            String name, String category, Double price, Integer stock, String brand, String model,
+            List<Long> comparisonIds // 🔥 NUEVO: Filtrar por IDs de comparaciones seleccionadas
     ) {
+        System.out.println("🔎 [Service] getFilteredComparisons ejecutado");
+        System.out.println("📥 Parámetros recibidos en el servicio:");
+        System.out.println("   - userId: " + userId);
+        System.out.println("   - title: " + title);
+        System.out.println("   - startDate: " + startDate);
+        System.out.println("   - endDate: " + endDate);
+        System.out.println("   - name: " + name);
+        System.out.println("   - category: " + category);
+        System.out.println("   - price: " + price);
+        System.out.println("   - stock: " + stock);
+        System.out.println("   - brand: " + brand);
+        System.out.println("   - model: " + model);
+        System.out.println("   - comparisonIds: " + (comparisonIds != null ? comparisonIds : "No filtrado"));
+
         size = Math.max(size, 10);
 
-        int totalComparisons = comparisonRepository.countFilteredComparisons(
-                userId, title, startDate, endDate, name, category, price, stock, brand, model
-        );
+        int totalComparisons;
+        try {
+            totalComparisons = comparisonRepository.countFilteredComparisons(
+                    userId, title, startDate, endDate, name, category, price, stock, brand, model, comparisonIds
+            );
+            System.out.println("✅ Total de comparaciones encontradas: " + totalComparisons);
+        } catch (Exception e) {
+            System.err.println("❌ Error al contar comparaciones: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al contar comparaciones", e);
+        }
 
         int offset = Math.max(0, (page * size >= totalComparisons) ? totalComparisons - size : page * size);
+        System.out.println("📊 Offset calculado: " + offset);
 
-        List<Comparison> comparisons = comparisonRepository.findFilteredComparisons(
-                userId, title, startDate, endDate, name, category, price, stock, brand, model,
-                size, offset, sortField, sortOrder
-        );
+        List<Comparison> comparisons;
+        try {
+            comparisons = comparisonRepository.findFilteredComparisons(
+                    userId, title, startDate, endDate, name, category, price, stock, brand, model,
+                    comparisonIds, size, offset, sortField, sortOrder
+            );
+            System.out.println("✅ Comparaciones obtenidas: " + comparisons.size());
+        } catch (Exception e) {
+            System.err.println("❌ Error al obtener comparaciones: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener comparaciones", e);
+        }
 
-        comparisons.forEach(comparison ->
-                comparison.setProductIds(comparisonProductRepository.findProductIdsByComparisonId(comparison.getId()))
-        );
+        try {
+            comparisons.forEach(comparison -> {
+                List<Long> productIds = comparisonProductRepository.findProductIdsByComparisonId(comparison.getId());
+                comparison.setProductIds(productIds);
+                System.out.println("🛒 Productos encontrados para comparación ID " + comparison.getId() + ": " + productIds);
+            });
+        } catch (Exception e) {
+            System.err.println("❌ Error al obtener productos de comparaciones: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Error al obtener productos de comparaciones", e);
+        }
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", comparisons);
         response.put("total", totalComparisons);
         response.put("page", page);
         response.put("size", size);
+
+        System.out.println("📦 Respuesta generada con éxito.");
         return response;
     }
+
+
 
     @Transactional
     public Map<String, Object> createComparison(Long userId, String title, String description, List<Long> productIds) {

@@ -7,13 +7,16 @@ import { UserProvider } from "./contexts/UserContext";
 import { RoleProvider } from "./contexts/RoleContext";
 import { ProductProvider } from "./contexts/ProductContext";
 import { RatingProvider } from "./contexts/RatingContext";
+import { ComparisonsContextProvider } from "./contexts/ComparisonsContext";
+import { ExcelProvider } from "./contexts/ExcelContext";
+import { CategoryProvider } from "./contexts/CategoryContext";  // ✅ Nuevo Provider
+import { BrandProvider } from "./contexts/BrandContext";  // ✅ Nuevo Provider
 import AppRoutes from "./router/Index";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min";
 import "./styles/global.css";
-import { ComparisonsContextProvider } from "./contexts/ComparisonsContext";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -36,8 +39,14 @@ root.render(
                             <ProductProvider>
                                 <RatingProvider>
                                     <ComparisonsContextProvider>
-                                        <AppRoutes />
-                                        <ToastContainer position="bottom-left" autoClose={3000} />
+                                        <ExcelProvider>
+                                            <CategoryProvider> 
+                                                <BrandProvider> 
+                                                    <AppRoutes />
+                                                    <ToastContainer position="bottom-left" autoClose={3000} />
+                                                </BrandProvider>
+                                            </CategoryProvider>
+                                        </ExcelProvider>
                                     </ComparisonsContextProvider>
                                 </RatingProvider>
                             </ProductProvider>

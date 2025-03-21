@@ -67,8 +67,14 @@ export const ComparisonsContextProvider = ({ children }) => {
 
     const getComparisonProducts = async (comparisonId) => {
         try {
+            const cacheKey = ["comparisonProducts", comparisonId];
+            
+            // Revisar si los productos ya están en la caché
+            const cachedProducts = queryClient.getQueryData(cacheKey);
+            if (cachedProducts) return cachedProducts;
+
             const products = await getProductsByComparisonId(fetchData, comparisonId);
-            queryClient.setQueryData(["comparisonProducts", comparisonId], products);
+            queryClient.setQueryData(cacheKey, products);
             return products;
         } catch (error) {
             toast.error("❌ Error al obtener productos de la comparación.");

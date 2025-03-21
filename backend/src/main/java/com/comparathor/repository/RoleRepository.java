@@ -11,20 +11,20 @@ import java.util.Optional;
 @Mapper
 public interface RoleRepository {
     List<Role> findFilteredRoles(
+            @Param("search") String search,
             @Param("roleName") String roleName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("roleCreatedBy") String roleCreatedBy,
             @Param("sortField") String sortField,
-            @Param("sortOrder") String sortOrder,
-            @Param("searchTerm") String searchTerm
+            @Param("sortOrder") String sortOrder
     );
     int countFilteredRoles(
+            @Param("search") String search,
             @Param("roleName") String roleName,
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
-            @Param("roleCreatedBy") String roleCreatedBy,
-            @Param("searchTerm") String searchTerm
+            @Param("roleCreatedBy") String roleCreatedBy
     );
     Optional<Role> findById(@Param("id") Long id);
     int existsById(@Param("id") Long id);
@@ -38,4 +38,5 @@ public interface RoleRepository {
             @Param("roleCreatedBy") String roleCreatedBy
     );
     void deleteById(@Param("id") Long id);
+    Long findIdByName(@Param("name") String name);
 }

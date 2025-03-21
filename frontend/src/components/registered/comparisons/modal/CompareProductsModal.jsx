@@ -42,7 +42,7 @@ const CompareProductsModal = ({ open, onClose, products }) => {
     };
 
     return (
-        <Modal title={translate("registered.comparison.title")} open={open} onClose={onClose}>
+        <Modal title={translate("registered.comparison.form.title")} open={open} onClose={onClose}>
             {errorMessage && (
                 <Alert severity="error" sx={{ mb: 2 }}>
                     {errorMessage}
@@ -50,8 +50,8 @@ const CompareProductsModal = ({ open, onClose, products }) => {
             )}
 
             <TextField
-                label={translate("registered.comparison.titleLabel")}
-                placeholder={translate("registered.comparison.enterTitle")}
+                label={translate("registered.comparison.form.titleLabel")}
+                placeholder={translate("registered.comparison.form.enterTitle")}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 fullWidth
@@ -59,8 +59,8 @@ const CompareProductsModal = ({ open, onClose, products }) => {
             />
 
             <TextField
-                label={translate("registered.comparison.descriptionLabel")}
-                placeholder={translate("registered.comparison.enterDescription")}
+                label={translate("registered.comparison.form.descriptionLabel")}
+                placeholder={translate("registered.comparison.form.enterDescription")}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 fullWidth
@@ -71,13 +71,13 @@ const CompareProductsModal = ({ open, onClose, products }) => {
                 products={products}
                 excludedFields={["id", "createdAt", "updatedAt"]}
                 columnNames={{
-                    category: translate("registered.comparison.category"),
-                    price: translate("registered.comparison.price"),
-                    stock: translate("registered.comparison.stock"),
-                    description: translate("registered.comparison.description"),
-                    brand: translate("registered.comparison.brand"),
-                    model: translate("registered.comparison.model"),
-                    imageUrl: translate("registered.comparison.image")
+                    category: translate("registered.comparison.form.category"),
+                    price: translate("registered.comparison.form.price"),
+                    stock: translate("registered.comparison.form.stock"),
+                    description: translate("registered.comparison.form.description"),
+                    brand: translate("registered.comparison.form.brand"),
+                    model: translate("registered.comparison.form.model"),
+                    imageUrl: translate("registered.comparison.form.image")
                 }}
                 hoveredColumn={hoveredColumn}
                 setHoveredColumn={setHoveredColumn}
@@ -91,7 +91,7 @@ const CompareProductsModal = ({ open, onClose, products }) => {
                 sx={{ mt: 2 }}
                 disabled={!title.trim() || products.length === 0}
             >
-                {translate("registered.comparison.saveComparison")}
+                {translate("registered.comparison.form.saveComparison")}
             </Button>
         </Modal>
     );

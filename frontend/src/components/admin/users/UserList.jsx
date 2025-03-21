@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { translate } from "../../../utils/Translate";
 import { useUser } from "../../../hooks/UseUser";
 import { useRole } from "../../../hooks/UseRole";
+import { useExcel } from "../../../hooks/UseExcel";
 import Table from "../../shared/Table";
 import CellDate from "../../shared/CellDate";
 import UserFilters from "./filter/UserFilters";
@@ -31,6 +32,7 @@ const UserList = () => {
 
     const { users, totalUsers, isLoading, createUser, updateUser, deleteUser, refetchUsers, handleSort, sortField, sortOrder, handlePageChange, currentPage } = useUser(filters);
     const { roles } = useRole();
+    const { handleUploadExcel, handleDownloadTemplate, isDownloading } = useExcel();
 
     useEffect(() => {
         refetchUsers(filters);
@@ -47,27 +49,27 @@ const UserList = () => {
     };
 
     const handleSave = async (formData, userId) => {
-        try {
-            let response = userId
-                ? await updateUser({ id: userId, userData: formData })
-                : await createUser(formData);
+        let response = userId
+            ? await updateUser({ id: userId, userData: formData })
+            : await createUser(formData);
 
-            closeModal();
-            refetchUsers();
-            return response;
-        } catch (error) {
-            console.error("❌ Error al guardar usuario:", error);
-        }
+        closeModal();
+        refetchUsers();
+        return response;
+
     };
 
     const handleDelete = async (user) => {
-        if (!window.confirm(translate("admin.user.list.confirmDelete", { name: user.name }))) return;
-        try {
-            await deleteUser(user.id);
-            setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), page: "1" }));
-        } catch (error) {
-            console.error("❌ Error al eliminar usuario:", error);
-        }
+        await deleteUser(user.id);
+        await refetchUsers();
+        setSearchParams(prev => {
+            const currentPage = parseInt(prev.get("page") || "1", 10);
+            const updatedTotalUsers = Math.max(0, totalUsers - 1);
+            const totalPages = Math.max(1, Math.ceil(updatedTotalUsers / filters.size));
+            const newPage = currentPage > totalPages ? totalPages : currentPage;
+            return { ...Object.fromRntries(prev.entries()), page: newPage.toString() };
+        });
+        window.location.reload()
     };
 
     const handleSortWrapper = (field) => {
@@ -106,6 +108,10 @@ const UserList = () => {
                 onSearch={(term) => setSearchParams({ ...filters, search: term })}
                 onOpenFilters={() => setShowFiltersModal(true)}
                 onCreate={() => openModal()}
+                onUploadExcel={handleUploadExcel}
+                onDownloadTemplate={handleDownloadTemplate}
+                entityName="users"
+                isDownloading={isDownloading}
             />
 
             <div className="mb-3">
@@ -117,7 +123,7 @@ const UserList = () => {
 
             {isLoading ? (
                 <div className="text-center mt-5">
-                    <LoadingSpinner/>
+                    <LoadingSpinner />
                 </div>
             ) : users.length > 0 ? (
                 <Table

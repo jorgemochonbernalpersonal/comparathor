@@ -15,6 +15,7 @@ public interface UserRepository {
     void update(User user);
     void delete(@Param("id") Long id);
     List<User> findFilteredUsers(
+            @Param("search") String search,
             @Param("roleId") Long roleId,
             @Param("searchTerm") String searchTerm,
             @Param("startDate") LocalDateTime startDate,
@@ -26,6 +27,7 @@ public interface UserRepository {
     );
 
     int countFilteredUsers(
+            @Param("search") String search,
             @Param("roleId") Long roleId,
             @Param("searchTerm") String searchTerm,
             @Param("startDate") LocalDateTime startDate,

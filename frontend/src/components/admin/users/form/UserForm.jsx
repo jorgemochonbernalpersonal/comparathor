@@ -91,8 +91,7 @@ const UserForm = ({ user, onSave, setShowModal }) => {
             }, 500);
 
         } catch (error) {
-            let errorMsg = error?.response?.data?.message || error?.message || "Error al procesar la solicitud.";
-            errorMsg = errorMsg.replace(/^Error \d+: /, ""); 
+            let errorMsg = error?.response || "Error al procesar la solicitud.";
             setErrorMessage(errorMsg);            
         } finally {
             actions.setSubmitting(false);

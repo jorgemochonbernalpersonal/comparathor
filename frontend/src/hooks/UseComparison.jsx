@@ -17,20 +17,23 @@ export const useComparison = (filters = {}, selectedComparisonIds = []) => {
     const [sortField, setSortField] = useState(filters.sortField || "createdAt");
     const [sortOrder, setSortOrder] = useState(filters.sortOrder || "desc");
 
+    // 🔹 Clave única para React Query, asegurando que los datos se actualicen correctamente
     const queryKey = useMemo(() =>
-        ["comparisons", { ...filters, sortField, sortOrder, page: currentPage, selectedComparisonIds }],
-        [filters, sortField, sortOrder, currentPage, selectedComparisonIds]
+        ["comparisons", { ...filters, selectedComparisonIds, sortField, sortOrder, page: currentPage }],
+        [filters, selectedComparisonIds, sortField, sortOrder, currentPage]
     );
 
+    // 🔹 Consultar comparaciones con los filtros proporcionados
     const { data: comparisonsData, isLoading, error, refetch } = useQuery({
         queryKey,
-        queryFn: () => getAllComparisons(fetchData, { ...filters, sortField, sortOrder, page: currentPage }),
+        queryFn: () => getAllComparisons(fetchData, { ...filters, selectedComparisonIds, sortField, sortOrder, page: currentPage }),
         keepPreviousData: true,
         staleTime: 5 * 60 * 1000,
         cacheTime: 10 * 60 * 1000,
         enabled: !!fetchData,
     });
 
+    // 🔹 Consultar productos para cada comparación
     const { data: comparisonsWithProducts, isFetching: isFetchingProducts } = useQuery({
         queryKey: ["comparisonsWithProducts", comparisonsData, selectedComparisonIds],
         queryFn: async () => {
@@ -51,24 +54,23 @@ export const useComparison = (filters = {}, selectedComparisonIds = []) => {
                 })
             );
 
-            if (selectedComparisonIds.length > 0) {
-                return enrichedComparisons.filter(comparison => 
-                    selectedComparisonIds.includes(comparison.id)
-                );
-            }
-
-            return enrichedComparisons;
+            // 🔹 Filtrar comparaciones seleccionadas si hay IDs seleccionados
+            return selectedComparisonIds.length > 0
+                ? enrichedComparisons.filter(comparison => selectedComparisonIds.includes(comparison.id))
+                : enrichedComparisons;
         },
         enabled: !!comparisonsData,
         staleTime: 5 * 60 * 1000,
         cacheTime: 10 * 60 * 1000,
     });
 
+    // 🔹 Manejar ordenamiento
     const handleSort = useCallback((field) => {
         setSortField(field);
         setSortOrder((prevOrder) => (sortField === field && prevOrder === "asc" ? "desc" : "asc"));
     }, [sortField]);
 
+    // 🔹 Manejar paginación
     const handlePageChange = useCallback((newPage) => {
         setCurrentPage(newPage);
     }, []);

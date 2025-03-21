@@ -41,17 +41,29 @@ public class ComparisonController {
             @RequestParam(name = "price", required = false) Double price,
             @RequestParam(name = "stock", required = false) Integer stock,
             @RequestParam(name = "brand", required = false) String brand,
-            @RequestParam(name = "model", required = false) String model
+            @RequestParam(name = "model", required = false) String model,
+            @RequestParam(name = "comparisonIds", required = false) List<Long> comparisonIds // 🔥 NUEVO
     ) {
+        System.out.println("🔎 [Controller] Petición recibida para obtener comparaciones");
+        System.out.println("📥 Parámetros: userId=" + userId + ", title=" + title +
+                ", startDate=" + startDate + ", endDate=" + endDate);
+        System.out.println("📥 Filtros: name=" + name + ", category=" + category +
+                ", price=" + price + ", stock=" + stock +
+                ", brand=" + brand + ", model=" + model);
+        System.out.println("📥 Comparaciones seleccionadas: " + (comparisonIds != null ? comparisonIds : "Ninguna"));
+
         validateAccess(token);
+
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? startDate.atTime(23, 59, 59) : null;
 
         return comparisonService.getFilteredComparisons(
                 userId, title, startDateTime, endDateTime, page, size, sortField, sortOrder,
-                name, category, price, stock, brand, model
+                name, category, price, stock, brand, model, comparisonIds
         );
     }
+
+
 
     @PostMapping
     public ResponseEntity<Map<String, Object>> createComparison(@RequestHeader("Authorization") String token,

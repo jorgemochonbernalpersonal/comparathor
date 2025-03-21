@@ -35,6 +35,7 @@ public interface ComparisonRepository {
             @Param("stock") Integer stock,
             @Param("brand") String brand,
             @Param("model") String model,
+            @Param("comparisonIds") List<Long> comparisonIds,
             @Param("size") int size,
             @Param("offset") int offset,
             @Param("sortField") String sortField,
@@ -51,7 +52,8 @@ public interface ComparisonRepository {
             @Param("price") Double price,
             @Param("stock") Integer stock,
             @Param("brand") String brand,
-            @Param("model") String model
+            @Param("model") String model,
+            @Param("comparisonIds") List<Long> comparisonIds // 🔥 AÑADIDO AQUÍ
     );
 
     int existsById(@Param("id") Long id);

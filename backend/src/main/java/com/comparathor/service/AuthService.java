@@ -40,12 +40,12 @@ public class AuthService {
                 .orElse(null);
 
         if (userId == null) {
-            throw new UnauthorizedException("❌ No se encontró un usuario con el refreshToken proporcionado.");
+            throw new UnauthorizedException("No se encontró un usuario con el refreshToken proporcionado.");
         }
 
         User user = userRepository.findById(userId);
         if (user == null) {
-            throw new UnauthorizedException("❌ Usuario no encontrado para el refresh token.");
+            throw new UnauthorizedException("Usuario no encontrado para el refresh token.");
         }
 
         String newAccessToken = generateAccessToken(user);

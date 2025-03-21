@@ -9,7 +9,7 @@ export const login = async (fetchData, userData) => {
     try {
         const response = await fetchLogin(fetchData, userData);
         if (!response || typeof response.accessToken !== "string" || typeof response.refreshToken !== "string") {
-            throw new Error("❌ No se recibieron los tokens esperados en la respuesta del servidor.");
+            throw new Error("No se recibieron los tokens esperados en la respuesta del servidor.");
         }
         localStorage.setItem("accessToken", response.accessToken);
         localStorage.setItem("refreshToken", response.refreshToken);

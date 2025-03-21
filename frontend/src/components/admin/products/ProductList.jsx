@@ -4,11 +4,15 @@ import { translate } from "../../../utils/Translate";
 import { useProduct } from "../../../hooks/UseProduct";
 import Table from "../../shared/Table";
 import CellDate from "../../shared/CellDate";
+import ImageCell from "../../shared/ImageCell";
 import ProductFilters from "./filter/ProductFilters";
 import FilterBar from "../../shared/FilterBar";
 import Modal from "../../shared/Modal";
 import ProductForm from "./form/ProductForm";
 import LoadingSpinner from "../../shared/LoadingSpinner";
+import { useExcel } from "../../../hooks/UseExcel";
+import { useBrand } from "../../../hooks/UseBrand";
+import { useCategory } from "../../../hooks/UseCategory";
 
 const ProductList = () => {
     const productsPerPage = 10;
@@ -16,6 +20,10 @@ const ProductList = () => {
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [showFiltersModal, setShowFiltersModal] = useState(false);
+    const [isUploadingImages, setIsUploadingImages] = useState(false);
+    const { handleUploadExcel, handleDownloadTemplate, isDownloading } = useExcel();
+    const { categories } = useCategory();
+    const { brands } = useBrand();
 
     const filters = useMemo(() => ({
         search: searchParams.get("search") || "",
@@ -23,6 +31,8 @@ const ProductList = () => {
         brand: searchParams.get("brand") || "",
         minPrice: searchParams.get("minPrice") || "",
         maxPrice: searchParams.get("maxPrice") || "",
+        minStock: searchParams.get("minStock") || "",
+        maxStock: searchParams.get("maxStock") || "",
         startDate: searchParams.get("startDate") || "",
         endDate: searchParams.get("endDate") || "",
         page: parseInt(searchParams.get("page") || "1", 10),
@@ -38,6 +48,7 @@ const ProductList = () => {
         createProduct,
         updateProduct,
         deleteProduct,
+        uploadImagesZip,
         refetchProducts,
         handleSort,
         sortField,
@@ -47,7 +58,7 @@ const ProductList = () => {
     } = useProduct(filters);
 
     useEffect(() => {
-        refetchProducts(filters);
+        refetchProducts();
     }, [filters, refetchProducts]);
 
     const openModal = (product = null) => {
@@ -61,27 +72,25 @@ const ProductList = () => {
     };
 
     const handleSave = async (formData, productId) => {
-        try {
-            let response = productId
-                ? await updateProduct({ id: productId, productData: formData })
-                : await createProduct(formData);
-
-            closeModal();
-            refetchProducts();
-            return response;
-        } catch (error) {
-            console.error("❌ Error al guardar producto:", error);
-        }
+        let response = productId
+            ? await updateProduct({ id: productId, productData: formData })
+            : await createProduct(formData);
+        closeModal();
+        refetchProducts();
+        return response;
     };
 
     const handleDelete = async (product) => {
-        if (!window.confirm(translate("admin.product.list.confirmDelete", { name: product.name }))) return;
-        try {
-            await deleteProduct(product.id);
-            setSearchParams(prev => ({ ...Object.fromEntries(prev.entries()), page: "1" }));
-        } catch (error) {
-            console.error("❌ Error al eliminar producto:", error);
-        }
+        await deleteProduct(product.id);
+        await refetchProducts();
+        setSearchParams(prev => {
+            const currentPage = parseInt(prev.get("page") || "1", 10);
+            const updatedTotalProducts = Math.max(0, totalProducts - 1);
+            const totalPages = Math.max(1, Math.ceil(updatedTotalProducts / filters.size));
+            const newPage = currentPage > totalPages ? totalPages : currentPage;
+            return { ...Object.fromEntries(prev.entries()), page: newPage.toString() };
+        });
+        window.location.reload()
     };
 
     const handleSortWrapper = (field) => {
@@ -92,24 +101,26 @@ const ProductList = () => {
             sortOrder: newOrder,
             page: "1",
         }));
-
         handleSort(field);
     };
 
+    const handleUploadImagesZip = async (zipFile) => {
+        await uploadImagesZip({ entityName: "products", zipFile });
+        refetchProducts();
+    };
+
     const handleApplyFilters = (newFilters) => {
-        setSearchParams({
-            search: newFilters.search || "",
-            category: newFilters.category || "",
-            brand: newFilters.brand || "",
-            minPrice: newFilters.minPrice || "",
-            maxPrice: newFilters.maxPrice || "",
-            startDate: newFilters.startDate || "",
-            endDate: newFilters.endDate || "",
-            page: "1",
-            size: productsPerPage.toString(),
-            sortField: filters.sortField,
-            sortOrder: filters.sortOrder,
-        });
+        const params = {
+            ...(newFilters.minPrice && newFilters.minPrice !== "" && { minPrice: newFilters.minPrice }),
+            ...(newFilters.maxPrice && newFilters.maxPrice !== "" && { maxPrice: newFilters.maxPrice }),
+            ...(newFilters.minStock && newFilters.minStock !== "" && { minStock: newFilters.minStock }),
+            ...(newFilters.maxStock && newFilters.maxStock !== "" && { maxStock: newFilters.maxStock }),
+            ...(newFilters.startDate && newFilters.startDate !== "" && { startDate: newFilters.startDate }),
+            ...(newFilters.endDate && newFilters.endDate !== "" && { endDate: newFilters.endDate }),
+            ...(newFilters.search?.trim() && { search: newFilters.search.trim() }),
+        };
+
+        setSearchParams(params);
         setShowFiltersModal(false);
     };
 
@@ -123,16 +134,24 @@ const ProductList = () => {
                 onSearch={(term) => setSearchParams({ ...filters, search: term })}
                 onOpenFilters={() => setShowFiltersModal(true)}
                 onCreate={() => openModal()}
+                onUploadExcel={handleUploadExcel}
+                onUploadImagesZip={handleUploadImagesZip}
+                onDownloadTemplate={handleDownloadTemplate}
+                entityName="products"
+                isDownloading={isDownloading}
+                isUploading={isUploadingImages}
+                showImageUpload={true}
             />
-
             <div className="mb-3">
-                {filters.search && <span className="badge bg-info me-2">🔍 {filters.search}</span>}
-                {filters.category && <span className="badge bg-warning me-2">🏷 {filters.category}</span>}
-                {filters.brand && <span className="badge bg-primary me-2">🏭 {filters.brand}</span>}
-                {filters.minPrice && <span className="badge bg-success me-2">💰 Min: {filters.minPrice}</span>}
-                {filters.maxPrice && <span className="badge bg-danger me-2">💰 Max: {filters.maxPrice}</span>}
+                {filters.search && <span className="badge bg-info me-2">🔍 {translate("filter.search")}: {filters.search}</span>}
+                {filters.category && <span className="badge bg-warning me-2">🏷 {translate("filter.category")}: {filters.category}</span>}
+                {filters.brand && <span className="badge bg-primary me-2">🏭 {translate("filter.brand")}: {filters.brand}</span>}
+                {filters.minPrice && <span className="badge bg-success me-2">{translate("filter.minPriceLabel")}: {filters.minPrice}</span>}
+                {filters.maxPrice && <span className="badge bg-danger me-2">{translate("filter.maxPriceLabel")}: {filters.maxPrice}</span>}
+                {filters.minStock && <span className="badge bg-secondary me-2">{translate("filter.minStockLabel")}: {filters.minStock}</span>}
+                {filters.maxStock && <span className="badge bg-dark me-2">{translate("filter.maxStockLabel")}: {filters.maxStock}</span>}
+                {filters.createdAt && <span className="badge bg-info me-2">{translate("filter.createdAt")}: {filters.createdAt}</span>}
             </div>
-
             {isLoading ? (
                 <div className="text-center mt-5">
                     <LoadingSpinner size="medium" color="#007BFF" />
@@ -143,10 +162,25 @@ const ProductList = () => {
                     columns={[
                         { label: translate("admin.product.list.id"), field: "id" },
                         { label: translate("admin.product.list.name"), field: "name" },
-                        { label: translate("admin.product.list.category"), field: "category" },
-                        { label: translate("admin.product.list.brand"), field: "brand" },
+                        { label: translate("admin.product.list.description"), field: "description" },
+                        {
+                            label: translate("admin.product.list.category"),
+                            field: "categoryId",
+                            render: (row) => categories.find(c => c.id === row.categoryId)?.name || "Sin categoría"
+                        },
+                        {
+                            label: translate("admin.product.list.brand"),
+                            field: "brandId",
+                            render: (row) => brands.find(b => b.id === row.brandId)?.name || "Sin marca"
+                        },
                         { label: translate("admin.product.list.price"), field: "price" },
                         { label: translate("admin.product.list.stock"), field: "stock" },
+                        {
+                            label: translate("admin.product.list.image"),
+                            field: "imageUrl",
+                            render: (row) => <ImageCell value={row.imageUrl} alt={row.name} />,
+                        },
+                        { label: translate("admin.product.list.createdBy"), field: "createdBy" },
                         {
                             label: translate("admin.product.list.createdAt"),
                             field: "createdAt",
@@ -159,10 +193,10 @@ const ProductList = () => {
                         { label: `🗑️ ${translate("admin.product.list.delete")}`, type: "danger", handler: handleDelete },
                     ]}
                     hiddenColumnsBreakpoints={{
-                        xs: [translate("admin.product.list.brand"), translate("admin.product.list.price"), translate("admin.product.list.stock")],
-                        sm: [translate("admin.product.list.price"), translate("admin.product.list.stock")],
-                        md: [translate("admin.product.list.stock")],
-                        lg: []
+                        xs: [translate("admin.product.list.description"), translate("admin.product.list.stock"), translate("admin.product.list.image"), translate("admin.product.list.createdBy"), translate("admin.product.list.stock"), translate("admin.product.list.price"), translate("admin.product.list.stock"), translate("admin.product.list.createdAt"), translate("admin.product.list.brand"), translate("admin.product.list.category")],
+                        sm: [translate("admin.product.list.description"), translate("admin.product.list.image"), translate("admin.product.list.createdBy"), translate("admin.product.list.stock"), translate("admin.product.list.price"), translate("admin.product.list.createdAt"), translate("admin.product.list.createdAt"), translate("admin.product.list.brand"), translate("admin.product.list.category")],
+                        md: [translate("admin.product.list.image"), translate("admin.product.list.createdBy"), translate("admin.product.list.description"), translate("admin.product.list.stock"), translate("admin.product.list.price"), translate("admin.product.list.category")],
+                        lg: [translate("admin.product.list.description"), translate("admin.product.list.createdBy")]
                     }}
                     onSort={handleSortWrapper}
                     sortField={sortField}
@@ -177,7 +211,7 @@ const ProductList = () => {
 
             {showFiltersModal && (
                 <ProductFilters
-                    show={showFiltersModal}
+                    open={showFiltersModal}
                     onClose={() => setShowFiltersModal(false)}
                     onApplyFilters={handleApplyFilters}
                     onResetFilters={handleClearFilters}

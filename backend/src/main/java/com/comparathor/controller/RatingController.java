@@ -30,16 +30,22 @@ public class RatingController {
             @RequestHeader("Authorization") String token,
             @RequestParam(name = "productId", required = false) Long productId,
             @RequestParam(name = "userId", required = false) Long userId,
+            @RequestParam(name = "minRating", required = false) Double minRating, // <-- Agregado
             @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(name = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(name = "page", defaultValue = "0") int page,
             @RequestParam(name = "size", defaultValue = "10") int size,
             @RequestParam(name = "sortField", required = false) String sortField,
             @RequestParam(name = "sortOrder", required = false) String sortOrder) {
+
         validateAccess(token);
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
-        LocalDateTime endDateTime = (endDate != null) ? startDate.atTime(23, 59, 59) : null;
-        return ratingService.getFilteredRatings(productId, userId, startDateTime, endDateTime, page, size, sortField, sortOrder);
+        LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
+        logger.info("Obteniendo ratings con filtros - productId: {}, userId: {}, minRating: {}, startDate: {}, endDate: {}, page: {}, size: {}, sortField: {}, sortOrder: {}",
+                productId, userId, minRating, startDateTime, endDateTime, page, size, sortField, sortOrder);
+        Map<String, Object> response = ratingService.getFilteredRatings(productId, userId, minRating, startDateTime, endDateTime, page, size, sortField, sortOrder);
+        logger.info("Total de ratings encontrados: {}", response.get("total"));
+        return response;
     }
 
     @PostMapping

@@ -31,13 +31,13 @@ public class UserSecurityService {
 
     public String getUsernameFromToken(String token) {
         if (token == null || !token.startsWith("Bearer ")) {
-            throw new IllegalArgumentException("🚫 Token inválido o no proporcionado.");
+            throw new IllegalArgumentException("🚫Token inválido o no proporcionado.");
         }
         try {
-            token = token.substring(7); // Eliminar "Bearer " del token
+            token = token.substring(7);
             return jwtUtil.extractUsername(token);
         } catch (Exception e) {
-            throw new IllegalArgumentException("🚫 No se pudo extraer el nombre de usuario del token.");
+            throw new IllegalArgumentException("No se pudo extraer el nombre de usuario del token.");
         }
     }
 

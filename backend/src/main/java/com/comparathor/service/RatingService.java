@@ -34,19 +34,31 @@ public class RatingService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFilteredRatings(Long productId, Long userId,
+                                                  Double minRating,
                                                   LocalDateTime startDate, LocalDateTime endDate,
                                                   int page, int size, String sortField, String sortOrder) {
         size = Math.max(size, 10);
-        int totalRatings = ratingRepository.countFilteredRatings(productId, userId, startDate, endDate);
-        int offset = Math.max(0, (page * size >= totalRatings) ? totalRatings - size : page * size);
-        List<Rating> ratings = ratingRepository.findFilteredRatings(productId, userId, startDate, endDate, size, offset, sortField, sortOrder);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", ratings);
-        response.put("total", totalRatings);
-        response.put("page", page);
-        response.put("size", size);
-        return response;
+        int totalRatings = ratingRepository.countFilteredRatings(productId, userId, minRating, startDate, endDate);
+        if (totalRatings == 0) {
+            logger.warn("No se encontraron ratings con los filtros proporcionados.");
+            return Map.of(
+                    "content", List.of(),
+                    "total", 0,
+                    "page", 1,
+                    "size", size
+            );
+        }
+        int totalPages = (int) Math.ceil((double) totalRatings / size);
+        page = Math.max(1, Math.min(page, totalPages)) - 1;
+        int offset = Math.min(page * size, totalRatings - size);
+        offset = Math.max(offset, 0);
+        List<Rating> ratings = ratingRepository.findFilteredRatings(productId, userId, minRating, startDate, endDate, size, offset, sortField, sortOrder);
+        return Map.of(
+                "content", ratings,
+                "total", totalRatings,
+                "page", page + 1,
+                "size", size
+        );
     }
 
     @Transactional

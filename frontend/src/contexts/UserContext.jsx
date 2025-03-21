@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetch } from "../hooks/UseFetch";
 import { createUserById, updateUserById, deleteUserById } from "../api/users/UserLogic";
 import { toast } from "react-toastify";
-
+import { ERROR_PREFIX_REGEX } from "../utils/Constants";  
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -12,7 +12,7 @@ export const UserProvider = ({ children }) => {
 
     const getErrorMessage = (error, defaultMessage) => {
         let errorMsg = error?.response?.data?.message || error?.message || defaultMessage;
-        return errorMsg.replace(/^Error \d+: /, "");
+        return errorMsg.replace(ERROR_PREFIX_REGEX, "");  
     };
 
     const createUserMutation = useMutation({
@@ -22,7 +22,7 @@ export const UserProvider = ({ children }) => {
             toast.success(data.message || "✅ Usuario creado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al crear usuario."));
+            toast.error(getErrorMessage(error, "Error al crear usuario."));
         },
     });
     
@@ -33,7 +33,7 @@ export const UserProvider = ({ children }) => {
             toast.success(data.message || "✅ Usuario actualizado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al actualizar usuario."));
+            toast.error(getErrorMessage(error, "Error al actualizar usuario."));
         },
     });
 
@@ -41,10 +41,10 @@ export const UserProvider = ({ children }) => {
         mutationFn: (id) => deleteUserById(fetchData, id),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["users"]);
-            toast.success(data.message || "✅ Usuario eliminado con éxito.");
+            toast.success(data.message || "Usuario eliminado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al eliminar usuario."));
+            toast.error(getErrorMessage(error, "Error al eliminar usuario."));
         },
     });
 

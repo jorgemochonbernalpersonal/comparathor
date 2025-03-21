@@ -8,6 +8,7 @@ import {
 } from "./ComparisonRequest";
 
 export const getAllComparisons = async (fetchData, filters = {}) => {
+    console.log('coco')
     try {
         const queryParams = new URLSearchParams({
             page: filters.page ?? 0,
@@ -15,6 +16,9 @@ export const getAllComparisons = async (fetchData, filters = {}) => {
             sortField: filters.sortField ?? "createdAt",
             sortOrder: filters.sortOrder ?? "desc",
         });
+
+        console.log("📡 Enviando petición con userId:", filters);
+
 
         if (filters.userId) queryParams.append("userId", filters.userId);
         if (filters.title?.trim()) queryParams.append("title", filters.title.trim());
@@ -28,15 +32,21 @@ export const getAllComparisons = async (fetchData, filters = {}) => {
         if (filters.brand?.trim()) queryParams.append("brand", filters.brand.trim());
         if (filters.model?.trim()) queryParams.append("model", filters.model.trim());
 
+        if (filters.comparisonIds?.length > 0) {
+            filters.comparisonIds.forEach(id => queryParams.append("comparisonIds", id));
+        }
+
         const endpoint = `comparisons?${queryParams.toString()}`;
         const response = await fetchAllComparisons(fetchData, endpoint);
+
+        console.log(response)
 
         return {
             total: response.total ?? 0,
             comparisons: response.content?.map(comparison => ({
                 ...comparison,
                 productIds: comparison.productIds ?? [],
-                products: comparison.products ?? [], 
+                products: comparison.products ?? [],
             })) ?? [],
         };
     } catch (error) {
@@ -67,6 +77,7 @@ export const createComparisonById = async (fetchData, comparisonData) => {
 };
 
 export const getComparisonById = async (fetchData, comparisonId) => {
+    console.log('ta')
     try {
         const comparison = await fetchComparisonById(fetchData, comparisonId);
         if (!comparison) return null;
@@ -103,6 +114,7 @@ export const deleteComparisonById = async (fetchData, comparisonId) => {
 };
 
 export const getProductsByComparisonId = async (fetchData, comparisonId) => {
+    console.log('sisi')
     try {
         const products = await fetchProductsByComparisonId(fetchData, comparisonId);
         if (!products) return [];

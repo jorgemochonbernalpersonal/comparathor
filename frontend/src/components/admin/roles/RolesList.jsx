@@ -48,26 +48,17 @@ const RoleList = () => {
     };
 
     const handleSave = async (formData, roleId) => {
-        try {
-            roleId
-                ? await updateRole({ roleId, updatedData: formData })
-                : await addRole(formData);
-
-            refetchRoles();
-            closeModal();
-        } catch (error) {
-            console.error("❌ Error al guardar el rol:", error);
-        }
+        roleId
+            ? await updateRole({ roleId, updatedData: formData })
+            : await addRole(formData);
+        refetchRoles();
+        closeModal();
     };
 
     const handleDelete = async (role) => {
-        if (!window.confirm(translate("admin.role.list.confirmDelete", { name: role.name }))) return;
-        try {
-            await deleteRole(role.id);
-            refetchRoles();
-        } catch (error) {
-            console.error("❌ Error al eliminar el rol:", error);
-        }
+        await deleteRole(role.id);
+        await refetchRoles();
+        window.location.reload()
     };
 
     const handleSortWrapper = (field) => {
@@ -81,7 +72,7 @@ const RoleList = () => {
         handleSort(field);
     };
 
-    const handleApplyFilters = (newFilters) => { 
+    const handleApplyFilters = (newFilters) => {
         setSearchParams({
             search: newFilters.search || "",
             startDate: newFilters.startDate || "",
@@ -141,9 +132,9 @@ const RoleList = () => {
                         { label: `🗑️ ${translate("admin.role.list.delete")}`, type: "danger", handler: handleDelete },
                     ]}
                     hiddenColumnsBreakpoints={{
-                        xs: [translate("admin.role.list.updatedAt")],
-                        sm: [translate("admin.role.list.updatedAt")],
-                        md: [translate("admin.role.list.updatedAt")],
+                        xs: [translate("admin.role.list.updatedAt"), translate("admin.role.list.description"), translate("admin.role.list.createdAt"), translate("admin.role.list.createdBy")],
+                        sm: [translate("admin.role.list.updatedAt"), translate("admin.role.list.description"), translate("admin.role.list.createdBy")],
+                        md: [translate("admin.role.list.updatedAt"), translate("admin.role.list.description")],
                         lg: [],
                     }}
                     onSort={handleSortWrapper}

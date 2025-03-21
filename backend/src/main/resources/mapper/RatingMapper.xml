@@ -4,7 +4,7 @@
 
 <mapper namespace="com.comparathor.repository.RatingRepository">
 
-    <!-- 🟢 Mapeo de resultados para Rating -->
+    <!-- 🟢 Mapeo de resultados para Rating sin Product (Usado en INSERT, UPDATE, DELETE) -->
     <resultMap id="RatingResultMap" type="com.comparathor.model.Rating">
         <id property="id" column="id"/>
         <result property="userId" column="user_id"/>
@@ -15,20 +15,47 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
+    <!-- 🟢 Mapeo de resultados para Rating con Product (Usado en SELECT) -->
+    <resultMap id="RatingWithProductResultMap" type="com.comparathor.model.Rating">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="productId" column="product_id"/>
+        <result property="rating" column="rating"/>
+        <result property="comment" column="comment"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+
+        <!-- Asociación con Product -->
+        <association property="product" javaType="com.comparathor.model.Product">
+            <id property="id" column="product_id"/>
+            <result property="name" column="product_name"/>
+            <result property="category" column="product_category"/>
+            <result property="price" column="product_price"/>
+            <result property="stock" column="product_stock"/>
+            <result property="description" column="product_description"/>
+            <result property="brand" column="product_brand"/>
+            <result property="model" column="product_model"/>
+            <result property="imageUrl" column="product_image_url"/>
+        </association>
+    </resultMap>
+
     <!-- 🔍 Buscar calificaciones con filtros y paginación -->
-    <select id="findFilteredRatings" resultMap="RatingResultMap">
-        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
-        FROM ratings
+    <select id="findFilteredRatings" resultMap="RatingWithProductResultMap">
+        SELECT
+        r.id, r.user_id, r.product_id, r.rating, r.comment, r.created_at, r.updated_at,
+        p.id AS product_id, p.name AS product_name, p.category AS product_category,
+        p.price AS product_price, p.stock AS product_stock, p.description AS product_description,
+        p.brand AS product_brand, p.model AS product_model, p.image_url AS product_image_url
+        FROM ratings r
+        LEFT JOIN products p ON r.product_id = p.id
         WHERE 1=1
-
         <include refid="RatingFilterConditions"/>
-
         <if test="sortField != null and sortOrder != null">
             ORDER BY
             <choose>
-                <when test="sortField == 'rating'"> rating </when>
-                <when test="sortField == 'createdAt'"> created_at </when>
-                <otherwise> created_at </otherwise>
+                <when test="sortField == 'rating'"> r.rating </when>
+                <when test="sortField == 'createdAt'"> r.created_at </when>
+                <otherwise> r.created_at </otherwise>
             </choose>
             <choose>
                 <when test="sortOrder == 'asc'"> ASC </when>
@@ -40,10 +67,8 @@
 
     <!-- 🔢 Contar calificaciones filtradas -->
     <select id="countFilteredRatings" resultType="int">
-        SELECT COUNT(*)
-        FROM ratings
+        SELECT COUNT(*) FROM ratings r
         WHERE 1=1
-
         <include refid="RatingFilterConditions"/>
     </select>
 
@@ -70,32 +95,44 @@
     <!-- 📌 Condiciones reutilizables para filtros -->
     <sql id="RatingFilterConditions">
         <if test="productId != null">
-            AND product_id = #{productId}
+            AND r.product_id = #{productId}
         </if>
         <if test="userId != null">
-            AND user_id = #{userId}
+            AND r.user_id = #{userId}
         </if>
         <if test="startDate != null">
-            AND created_at >= #{startDate}
+            AND r.created_at >= #{startDate}
         </if>
         <if test="endDate != null">
-            AND created_at &lt;= #{endDate}
+            AND r.created_at &lt;= #{endDate}
+        </if>
+        <if test="minRating != null">
+            AND r.rating >= #{minRating}
         </if>
     </sql>
 
-    <!-- Buscar calificación específica de un usuario para un producto -->
-    <select id="findUserRatingForProduct" resultMap="RatingResultMap">
-        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
-        FROM ratings
-        WHERE product_id = #{productId} AND user_id = #{userId}
+    <!-- 🔍 Buscar calificación específica de un usuario para un producto -->
+    <select id="findUserRatingForProduct" resultMap="RatingWithProductResultMap">
+        SELECT
+            r.id, r.user_id, r.product_id, r.rating, r.comment, r.created_at, r.updated_at,
+            p.id AS product_id, p.name AS product_name, p.category AS product_category,
+            p.price AS product_price, p.stock AS product_stock, p.description AS product_description,
+            p.brand AS product_brand, p.model AS product_model, p.image_url AS product_image_url
+        FROM ratings r
+                 LEFT JOIN products p ON r.product_id = p.id
+        WHERE r.product_id = #{productId} AND r.user_id = #{userId}
     </select>
 
-    <!-- Buscar calificación por ID -->
-    <select id="findById" parameterType="long" resultMap="RatingResultMap">
-        SELECT id, user_id, product_id, rating, comment, created_at, updated_at
-        FROM ratings
-        WHERE id = #{id}
+    <!-- 🔍 Buscar calificación por ID -->
+    <select id="findById" parameterType="long" resultMap="RatingWithProductResultMap">
+        SELECT
+            r.id, r.user_id, r.product_id, r.rating, r.comment, r.created_at, r.updated_at,
+            p.id AS product_id, p.name AS product_name, p.category AS product_category,
+            p.price AS product_price, p.stock AS product_stock, p.description AS product_description,
+            p.brand AS product_brand, p.model AS product_model, p.image_url AS product_image_url
+        FROM ratings r
+                 LEFT JOIN products p ON r.product_id = p.id
+        WHERE r.id = #{id}
     </select>
-
 
 </mapper>

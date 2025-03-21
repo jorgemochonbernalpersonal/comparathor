@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.comparathor.repository.CategoryRepository">
+
+    <resultMap id="CategoryResultMap" type="com.comparathor.model.Category">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="description" column="description"/>
+        <result property="color" column="color"/>
+        <result property="isActive" column="is_active"/>
+    </resultMap>
+
+    <select id="findAll" resultMap="CategoryResultMap">
+        SELECT * FROM categories
+    </select>
+
+    <select id="findById" resultMap="CategoryResultMap">
+        SELECT * FROM categories WHERE id = #{id}
+    </select>
+
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(#{name}))
+    </select>
+
+    <select id="existsById" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM categories WHERE id = #{id}
+    </select>
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO categories (name, description, color, is_active)
+        VALUES (#{name}, #{description}, #{color}, #{isActive})
+    </insert>
+
+    <update id="updateCategory">
+        UPDATE categories
+        SET name = #{name},
+            description = #{description},
+            color = #{color},
+            is_active = #{isActive}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM categories WHERE id = #{id}
+    </delete>
+
+    <select id="findIdByName" resultType="Long">
+        SELECT id FROM categories WHERE LOWER(TRIM(name)) = LOWER(TRIM(#{name})) LIMIT 1
+    </select>
+
+    <select id="findFilteredCategories" resultMap="CategoryResultMap">
+        SELECT * FROM categories WHERE 1=1
+        <if test="color != null">
+            AND color = #{color}
+        </if>
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+        <if test="startDate != null">
+            AND created_at >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND created_at &lt;= #{endDate}
+        </if>
+        <if test="sortField != null and sortOrder != null">
+            ORDER BY
+            <choose>
+                <when test="sortField == 'name'"> name </when>
+                <when test="sortField == 'color'"> color </when>
+                <when test="sortField == 'isActive'"> is_active </when>
+                <otherwise> id </otherwise>
+            </choose>
+            <choose>
+                <when test="sortOrder == 'asc'"> ASC </when>
+                <otherwise> DESC </otherwise>
+            </choose>
+        </if>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <select id="countFilteredCategories" resultType="int">
+        SELECT COUNT(*) FROM categories WHERE 1=1
+        <if test="color != null">
+            AND color = #{color}
+        </if>
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+        <if test="startDate != null">
+            AND created_at >= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND created_at &lt;= #{endDate}
+        </if>
+    </select>
+
+</mapper>

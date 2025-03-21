@@ -1,7 +1,12 @@
 import React, { createContext } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFetch } from "../hooks/UseFetch";
-import { createProductById, updateProductById, deleteProductById } from "../api/products/ProductLogic";
+import {
+    createProductById,
+    updateProductById,
+    deleteProductById,
+    uploadProductImagesZip,
+} from "../api/products/ProductLogic";
 import { toast } from "react-toastify";
 
 export const ProductContext = createContext();
@@ -10,9 +15,9 @@ export const ProductProvider = ({ children }) => {
     const { fetchData } = useFetch();
     const queryClient = useQueryClient();
 
-    const getErrorMessage = (error, defaultMessage) => {
+    const cleanErrorMessage = (error, defaultMessage) => {
         let errorMsg = error?.response?.data?.message || error?.message || defaultMessage;
-        return errorMsg.replace(/^Error \d+: /, "");
+        return errorMsg.replace(/^Error \d+: /, "").trim();
     };
 
     const createProductMutation = useMutation({
@@ -22,7 +27,7 @@ export const ProductProvider = ({ children }) => {
             toast.success(data.message || "✅ Producto creado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al crear producto."));
+            toast.error(cleanErrorMessage(error, "Error al crear producto."));
         },
     });
 
@@ -33,7 +38,7 @@ export const ProductProvider = ({ children }) => {
             toast.success(data.message || "✅ Producto actualizado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al actualizar producto."));
+            toast.error(cleanErrorMessage(error, "Error al actualizar producto."));
         },
     });
 
@@ -44,7 +49,19 @@ export const ProductProvider = ({ children }) => {
             toast.success(data.message || "✅ Producto eliminado con éxito.");
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al eliminar producto."));
+            toast.error(cleanErrorMessage(error, "Error al eliminar producto."));
+        },
+    });
+
+    const uploadImagesMutation = useMutation({
+        mutationFn: ({ entityName, zipFile }) => uploadProductImagesZip(fetchData, entityName, zipFile),
+        onSuccess: (message) => {
+            queryClient.invalidateQueries(["products"]);
+            toast.success(message || "✅ Imágenes subidas con éxito.");
+        },
+        onError: (error) => {
+            const errorMsg = cleanErrorMessage(error, "Error al subir imágenes.");
+            toast.error(errorMsg);
         },
     });
 
@@ -53,6 +70,7 @@ export const ProductProvider = ({ children }) => {
             createProduct: createProductMutation.mutateAsync,
             updateProduct: updateProductMutation.mutateAsync,
             deleteProduct: deleteProductMutation.mutateAsync,
+            uploadImagesZip: uploadImagesMutation.mutateAsync,
         }}>
             {children}
         </ProductContext.Provider>

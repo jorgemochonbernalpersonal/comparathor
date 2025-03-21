@@ -17,3 +17,18 @@ export const updateProduct = async (fetchData, productId, productData) => {
 export const deleteProduct = async (fetchData, productId) => {
     return await fetchData(`products/${productId}`, "DELETE");
 };
+
+export const uploadMassiveImages = async (fetchData, entityName, zipFile) => {
+    const formData = new FormData();
+    formData.append("file", zipFile);
+
+    try {
+        const response = await fetchData(`products/upload-massive-images`, "POST", formData);
+        if (!response) {
+            throw new Error("No se recibió una respuesta del servidor.");
+        }
+        return response;
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
+};

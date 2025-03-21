@@ -1,149 +1,182 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { fetchCategories } from "../../../../api/products/ProductLogic"; 
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { translate } from "../../../../utils/Translate";
 import FilterModal from "../../../shared/FilterModal";
+import { TextField, FormControl } from "@mui/material";
 
-const ProductFilters = ({ show, onClose, onApplyFilters }) => {
-    // const [filters, setFilters] = useState({
-    //     startDate: "",
-    //     endDate: "",
-    //     category: "",
-    //     minPrice: "",
-    //     maxPrice: "",
-    // });
+const ProductFilters = ({ open, onClose, onApplyFilters }) => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [filters, setFilters] = useState({
+        minPrice: "",
+        maxPrice: "",
+        minStock: "",
+        maxStock: "",
+        startDate: "",
+        endDate: ""
+    });
+    const [error, setError] = useState({});
 
-    // const [dateError, setDateError] = useState("");
-    // const [priceError, setPriceError] = useState("");
+    useEffect(() => {
+        if (open) {
+            setFilters({
+                minPrice: searchParams.get("minPrice") || "",
+                maxPrice: searchParams.get("maxPrice") || "",
+                minStock: searchParams.get("minStock") || "",
+                maxStock: searchParams.get("maxStock") || "",
+                startDate: searchParams.get("startDate") || "",
+                endDate: searchParams.get("endDate") || "",
+            });
+            setError({});
+        }
+    }, [open]);
 
-    // const { data: categories, isLoading } = useQuery({
-    //     queryKey: ["categories"],
-    //     queryFn: fetchCategories, 
-    //     staleTime: 5 * 60 * 1000, // Cache de 5 minutos
-    // });
+    const validateInputs = (updatedFilters) => {
+        let errors = {};
 
-    // useEffect(() => {
-    //     if (filters.startDate && filters.endDate) {
-    //         const start = new Date(filters.startDate);
-    //         const end = new Date(filters.endDate);
-    //         setDateError(start > end ? translate("admin.product.filter.dateError") : "");
-    //     } else {
-    //         setDateError("");
-    //     }
+        if (updatedFilters.startDate && updatedFilters.endDate) {
+            if (new Date(updatedFilters.startDate) > new Date(updatedFilters.endDate)) {
+                errors.dateError = translate("admin.product.filter.dateError");
+            }
+        }
 
-    //     if (filters.minPrice && filters.maxPrice) {
-    //         setPriceError(parseFloat(filters.minPrice) > parseFloat(filters.maxPrice)
-    //             ? translate("admin.product.filter.priceError")
-    //             : ""
-    //         );
-    //     } else {
-    //         setPriceError("");
-    //     }
-    // }, [filters.startDate, filters.endDate, filters.minPrice, filters.maxPrice]);
+        if (updatedFilters.minPrice && updatedFilters.maxPrice) {
+            if (parseFloat(updatedFilters.minPrice) > parseFloat(updatedFilters.maxPrice)) {
+                errors.priceError = translate("admin.product.filter.priceRangeError");
+            }
+        }
 
-    // const handleChange = useCallback((e) => {
-    //     const { name, value } = e.target;
-    //     setFilters((prev) => ({ ...prev, [name]: value }));
-    // }, []);
+        if (updatedFilters.minStock && updatedFilters.maxStock) {
+            if (parseInt(updatedFilters.minStock) > parseInt(updatedFilters.maxStock)) {
+                errors.stockError = translate("admin.product.filter.stockRangeError");
+            }
+        }
 
-    // const handleApplyFilters = () => {
-    //     if (!dateError && !priceError) {
-    //         onApplyFilters(filters);
-    //         onClose();
-    //     }
-    // };
+        setError(errors);
+        return Object.keys(errors).length === 0;
+    };
 
-    // const handleClearFilters = () => {
-    //     setFilters({ startDate: "", endDate: "", category: "", minPrice: "", maxPrice: "" });
-    //     setDateError("");
-    //     setPriceError("");
-    //     onApplyFilters({ startDate: "", endDate: "", category: "", minPrice: "", maxPrice: "" });
-    //     onClose();
-    // };
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFilters((prev) => {
+            const updatedFilters = { ...prev, [name]: value };
+            validateInputs(updatedFilters);
+            return updatedFilters;
+        });
+    };
+    
 
-    // return (
-    //     <FilterModal
-    //         show={show}
-    //         onClose={onClose}
-    //         onClear={handleClearFilters}
-    //         onApply={handleApplyFilters}
-    //         title={translate("admin.product.filter.title")}
-    //         disableApply={!!dateError || !!priceError}
-    //     >
-    //         <div className="mb-3">
-    //             <label htmlFor="startDate">{translate("admin.product.filter.from")}:</label>
-    //             <input
-    //                 type="date"
-    //                 id="startDate"
-    //                 name="startDate"
-    //                 className={`form-control ${dateError ? "is-invalid" : ""}`}
-    //                 value={filters.startDate}
-    //                 onChange={handleChange}
-    //             />
-    //         </div>
-    //         <div className="mb-3">
-    //             <label htmlFor="endDate">{translate("admin.product.filter.to")}:</label>
-    //             <input
-    //                 type="date"
-    //                 id="endDate"
-    //                 name="endDate"
-    //                 className={`form-control ${dateError ? "is-invalid" : ""}`}
-    //                 value={filters.endDate}
-    //                 onChange={handleChange}
-    //             />
-    //             {dateError && <div className="text-danger">{dateError}</div>}
-    //         </div>
-    //         <div className="mb-3">
-    //             <label htmlFor="category">{translate("admin.product.filter.category")}:</label>
-    //             <select
-    //                 id="category"
-    //                 name="category"
-    //                 className="form-select"
-    //                 value={filters.category}
-    //                 onChange={handleChange}
-    //                 disabled={isLoading}
-    //             >
-    //                 <option value="">{translate("admin.product.filter.selectCategory")}</option>
-    //                 {isLoading ? (
-    //                     <option disabled>{translate("admin.product.filter.loadingCategories")}</option>
-    //                 ) : (
-    //                     categories?.map((cat) => (
-    //                         <option key={cat.id || cat._id} value={cat.name}>
-    //                             {cat.name}
-    //                         </option>
-    //                     ))
-    //                 )}
-    //             </select>
-    //         </div>
-    //         <div className="row">
-    //             <div className="col-md-6">
-    //                 <label htmlFor="minPrice">{translate("admin.product.filter.minPrice")}:</label>
-    //                 <input
-    //                     type="number"
-    //                     id="minPrice"
-    //                     name="minPrice"
-    //                     className={`form-control ${priceError ? "is-invalid" : ""}`}
-    //                     value={filters.minPrice}
-    //                     onChange={handleChange}
-    //                     placeholder="Ej: 10.00"
-    //                 />
-    //             </div>
-    //             <div className="col-md-6">
-    //                 <label htmlFor="maxPrice">{translate("admin.product.filter.maxPrice")}:</label>
-    //                 <input
-    //                     type="number"
-    //                     id="maxPrice"
-    //                     name="maxPrice"
-    //                     className={`form-control ${priceError ? "is-invalid" : ""}`}
-    //                     value={filters.maxPrice}
-    //                     onChange={handleChange}
-    //                     placeholder="Ej: 500.00"
-    //                 />
-    //             </div>
-    //             {priceError && <div className="text-danger mt-2">{priceError}</div>}
-    //         </div>
-    //     </FilterModal>
-    // );
+    const handleApplyFilters = () => {
+        if (!validateInputs(filters)) return;
+        const params = {
+            ...(filters.minPrice && { minPrice: filters.minPrice }),
+            ...(filters.maxPrice && { maxPrice: filters.maxPrice }),
+            ...(filters.minStock && { minStock: filters.minStock }),
+            ...(filters.maxStock && { maxStock: filters.maxStock }),
+            ...(filters.startDate && { startDate: filters.startDate }),
+            ...(filters.endDate && { endDate: filters.endDate }),
+        };
+        setSearchParams(params);
+        onApplyFilters(filters);
+        onClose();
+    };
+
+    const handleClearFilters = () => {
+        const clearedFilters = {
+            minPrice: "",
+            maxPrice: "",
+            minStock: "",
+            maxStock: "",
+            startDate: "",
+            endDate: ""
+        };
+        setFilters(clearedFilters);
+        setError({});
+        setSearchParams({});
+        onApplyFilters(clearedFilters);
+        onClose();
+    };
+
+    return (
+        <FilterModal
+            open={open}
+            onClose={onClose}
+            onClear={handleClearFilters}
+            onApply={handleApplyFilters}
+            title={translate("admin.product.filter.title")}
+            disableApply={Object.keys(error).length > 0}
+        >
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.minPrice")}
+                    name="minPrice"
+                    type="number"
+                    value={filters.minPrice}
+                    onChange={handleChange}
+                    error={!!error.priceError}
+                />
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.maxPrice")}
+                    name="maxPrice"
+                    type="number"
+                    value={filters.maxPrice}
+                    onChange={handleChange}
+                    error={!!error.priceError}
+                    helperText={error.priceError}
+                />
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.minStock")}
+                    name="minStock"
+                    type="number"
+                    value={filters.minStock}
+                    onChange={handleChange}
+                    error={!!error.stockError}
+                />
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.maxStock")}
+                    name="maxStock"
+                    type="number"
+                    value={filters.maxStock}
+                    onChange={handleChange}
+                    error={!!error.stockError}
+                    helperText={error.stockError}
+                />
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.startDate")}
+                    type="date"
+                    name="startDate"
+                    InputLabelProps={{ shrink: true }}
+                    value={filters.startDate}
+                    onChange={handleChange}
+                    error={!!error.dateError}
+                />
+            </FormControl>
+
+            <FormControl fullWidth margin="normal">
+                <TextField
+                    label={translate("admin.product.filter.endDate")}
+                    type="date"
+                    name="endDate"
+                    InputLabelProps={{ shrink: true }}
+                    value={filters.endDate}
+                    onChange={handleChange}
+                    error={!!error.dateError}
+                    helperText={error.dateError}
+                />
+            </FormControl>
+        </FilterModal>
+    );
 };
 
 export default ProductFilters;

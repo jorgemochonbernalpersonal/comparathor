@@ -4,8 +4,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -14,7 +12,6 @@ import java.util.List;
 
 @Component
 public class JwtRequestFilter extends OncePerRequestFilter {
-    private static final Logger logger = LoggerFactory.getLogger(JwtRequestFilter.class);
     private final JwtUtil jwtUtil;
 
     public JwtRequestFilter(JwtUtil jwtUtil) {
@@ -29,71 +26,55 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         String method = request.getMethod();
         String token = request.getHeader("Authorization");
 
-        logger.info("📢 Petición recibida: [{}] {}", method, requestURI);
-
         response.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
         response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
         response.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-        response.setHeader("Access-Control-Expose-Headers", "Authorization");
         response.setHeader("Access-Control-Allow-Credentials", "true");
+        response.setHeader("Access-Control-Expose-Headers", "Authorization, Content-Disposition");
 
         if ("OPTIONS".equalsIgnoreCase(method)) {
-            logger.info("🟢 OPTIONS request detectado, permitiendo sin verificación.");
             response.setStatus(HttpServletResponse.SC_OK);
             return;
         }
 
-        // Rutas públicas que no requieren autenticación
-        List<String> publicRoutes = List.of(
-                "/api/auth/register",
-                "/api/auth/login"
-        );
+        List<String> publicRoutes = List.of("/api/auth/register", "/api/auth/login");
 
-        if (publicRoutes.stream().anyMatch(route -> requestURI.equalsIgnoreCase(route))) {
-            logger.info("🟢 Ruta pública detectada: {}, permitiendo acceso sin token.", requestURI);
+        if (publicRoutes.contains(requestURI) || requestURI.equalsIgnoreCase("/api/auth/refresh-token")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 🔥 Evitar bucles infinitos en /refresh-token
-        if (requestURI.equalsIgnoreCase("/api/auth/refresh-token")) {
+        if (requestURI.startsWith("/api/excel/download-template")) {
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition, Content-Length");
             filterChain.doFilter(request, response);
             return;
         }
 
         if (token == null || !token.startsWith("Bearer ")) {
-            logger.warn("🚨 Token no proporcionado o mal formado para la ruta: {}", requestURI);
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.getWriter().write("Token no proporcionado");
             return;
         }
 
-        token = token.substring(7); // Remover "Bearer "
+        token = token.substring(7);
 
         try {
             String username = jwtUtil.extractUsername(token);
             List<String> roles = jwtUtil.extractRoles(token);
 
             if (username == null || roles == null || roles.isEmpty() || !jwtUtil.validateToken(token, username)) {
-                logger.warn("❌ Token inválido o expirado para el usuario: {}", username);
-
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 response.getWriter().write("Token inválido o expirado");
                 return;
             }
 
-            logger.info("✅ Token válido para el usuario: {}", username);
             request.setAttribute("username", username);
             request.setAttribute("roles", roles);
             filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            logger.error("❌ Error en la validación del token: {}", e.getMessage());
-
-            if (!requestURI.equalsIgnoreCase("/api/auth/refresh-token")) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                response.getWriter().write("Token inválido o expirado");
-            }
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("Token inválido o expirado");
         }
     }
 }

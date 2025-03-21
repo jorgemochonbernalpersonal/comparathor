@@ -22,13 +22,4 @@ public class User {
 
     private List<Long> comparisonIds = new ArrayList<>();
     private List<Long> ratingIds = new ArrayList<>();
-
-    public User(String name, String email, String password, Role role) {
-        this.name = name;
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
-    }
 }

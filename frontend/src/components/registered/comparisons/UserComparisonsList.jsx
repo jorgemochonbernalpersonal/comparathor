@@ -27,20 +27,25 @@ const UserComparisonsList = () => {
         sortOrder: searchParams.get("sortOrder") || "desc",
     }), [searchParams]);
 
-    const { comparisons, isLoading, error, refetchComparisons } = useComparison(filters, selectedComparisons);
+    const { comparisons, refetchComparisons } = useComparison(filters);
 
     useEffect(() => {
         refetchComparisons(filters);
     }, [filters, refetchComparisons]);
 
     const handleComparisonChange = (event) => {
-        const selected = event.target.value;
-        if (selected.length > MAX_COMPARISONS) return;
-        setSelectedComparisons(selected);
+        const value = event.target.value;
+        if (value.length <= MAX_COMPARISONS) {
+            setSelectedComparisons(value);
+        } else {
+            alert(`⚠️ Solo puedes seleccionar un máximo de ${MAX_COMPARISONS} comparaciones.`);
+        }
     };
 
     const clearSelection = () => {
         setSelectedComparisons([]);
+        setSearchParams({});
+        refetchComparisons({});
     };
 
     const handleApplyFilters = (newFilters) => {
@@ -57,12 +62,18 @@ const UserComparisonsList = () => {
         setShowFiltersModal(false);
     };
 
-    const displayedComparisons = comparisons;
+    const displayedComparisons = useMemo(() => {
+        if (selectedComparisons.length === 0) return comparisons;
+
+        return comparisons.filter(comparison =>
+            selectedComparisons.includes(comparison.id)
+        );
+    }, [comparisons, selectedComparisons]);
 
     return (
         <Box sx={{ maxWidth: "1300px", margin: "0 auto", padding: 3 }}>
             <Typography variant="h4" sx={{ mb: 3, textAlign: "center", fontWeight: "bold" }}>
-                {translate("registered.userComparisons.title")}
+                {translate("registered.comparison.title")}
             </Typography>
 
             <UserComparisonFilter
@@ -80,14 +91,25 @@ const UserComparisonsList = () => {
                         displayEmpty
                         fullWidth
                         sx={{ mb: 2, bgcolor: "#f5f5f5", borderRadius: "8px" }}
-                        renderValue={(selected) =>
-                            selected.length === 0
-                                ? translate("registered.comparison.selectComparison")
-                                : selected.map((id) => displayedComparisons.find(c => c.id === id)?.title).join(" vs ")
-                        }
+                        renderValue={(selected) => {
+                            if (selected.length === 0) {
+                                return translate("registered.comparison.list.selectComparison");
+                            }
+                            return selected
+                                .map((id) => comparisons.find((c) => c.id === id)?.title)
+                                .filter(Boolean)
+                                .join(" vs ");
+                        }}
                     >
-                        {displayedComparisons.map((comparison) => (
-                            <MenuItem key={comparison.id} value={comparison.id}>
+                        {comparisons.map((comparison) => (
+                            <MenuItem
+                                key={comparison.id}
+                                value={comparison.id}
+                                disabled={
+                                    selectedComparisons.length >= MAX_COMPARISONS &&
+                                    !selectedComparisons.includes(comparison.id)
+                                }
+                            >
                                 {comparison.title}
                             </MenuItem>
                         ))}
@@ -119,7 +141,7 @@ const UserComparisonsList = () => {
 
             {displayedComparisons.length === 0 ? (
                 <Alert severity="info" textAlign="center" sx={{ mt: 3 }}>
-                    {translate("registered.comparison.noFilteredResults")}
+                    {translate("registered.comparison.list.noFilteredResults")}
                 </Alert>
             ) : (
                 selectedComparisons.length > 0 && (
@@ -138,7 +160,7 @@ const UserComparisonsList = () => {
 
                                             {!comparison.products?.length ? (
                                                 <Typography textAlign="center" padding={2}>
-                                                    ℹ️ {translate("registered.comparison.noComparison")}
+                                                    ℹ️ {translate("registered.comparison.list.noComparison")}
                                                 </Typography>
                                             ) : (
                                                 <TableCompare
@@ -147,14 +169,14 @@ const UserComparisonsList = () => {
                                                     setHoveredColumn={setHoveredColumn}
                                                     excludedFields={["id", "createdAt", "updatedAt"]}
                                                     columnNames={{
-                                                        name: translate("registered.comparison.name"),
-                                                        category: translate("registered.comparison.category"),
-                                                        price: translate("registered.comparison.price"),
-                                                        stock: translate("registered.comparison.stock"),
-                                                        brand: translate("registered.comparison.brand"),
-                                                        model: translate("registered.comparison.model"),
-                                                        description: translate("registered.comparison.description"),
-                                                        imageUrl: translate("registered.comparison.image"),
+                                                        name: translate("registered.comparison.list.name"),
+                                                        category: translate("registered.comparison.list.category"),
+                                                        price: translate("registered.comparison.list.price"),
+                                                        stock: translate("registered.comparison.list.stock"),
+                                                        brand: translate("registered.comparison.list.brand"),
+                                                        model: translate("registered.comparison.list.model"),
+                                                        description: translate("registered.comparison.list.description"),
+                                                        imageUrl: translate("registered.comparison.list.image"),
                                                     }}
                                                 />
                                             )}

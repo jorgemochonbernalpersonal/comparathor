@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as Yup from "yup";
-import { toast } from "react-toastify";
-import { translate } from "../../../../utils/Translate";
 import Form from "../../../shared/Form";
+import { translate } from "../../../../utils/Translate";
 import { useRole } from "../../../../hooks/UseRole";
 
 const RoleForm = ({ role, onSave, setShowModal }) => {
@@ -14,7 +13,7 @@ const RoleForm = ({ role, onSave, setShowModal }) => {
         if (!roles || roles.length === 0) {
             loadRoles();
         }
-    }, [loadRoles, roles.length]);
+    }, [loadRoles]); 
 
     const fields = [
         {
@@ -32,8 +31,8 @@ const RoleForm = ({ role, onSave, setShowModal }) => {
 
     const validationSchema = Yup.object().shape({
         name: Yup.string()
-            .min(2, translate("admin.role.form.errors.nameMin"))
-            .required(translate("admin.role.form.errors.nameRequired")),
+            .required(translate("admin.role.form.errors.nameRequired"))
+            .min(2, translate("admin.role.form.errors.nameMin")),
         description: Yup.string()
             .max(500, translate("admin.role.form.errors.descriptionMax"))
             .notRequired(),
@@ -51,9 +50,8 @@ const RoleForm = ({ role, onSave, setShowModal }) => {
         try {
             const response = await onSave(values, roleId);
             if (!response) {
-                throw new Error("❌ No se recibió respuesta del servidor.");
+                throw new Error("No se recibió respuesta del servidor.");
             }
-            toast.success(roleId ? "✅ Rol actualizado con éxito" : "✅ Rol creado con éxito");
 
             setTimeout(() => {
                 if (typeof setShowModal === "function") {
@@ -62,9 +60,8 @@ const RoleForm = ({ role, onSave, setShowModal }) => {
                 actions.resetForm();
             }, 500);
         } catch (error) {
-            let errorMsg = error?.response?.data?.message || error?.message || "❌ Error al procesar la solicitud.";
-            errorMsg = errorMsg.replace(/^Error \d+: /, ""); 
-            setErrorMessage(errorMsg);
+            let errorMsg = error?.response?.data?.message || error?.message || "Error al procesar la solicitud.";
+            setErrorMessage(errorMsg);            
         } finally {
             actions.setSubmitting(false);
         }
@@ -77,7 +74,6 @@ const RoleForm = ({ role, onSave, setShowModal }) => {
                     {errorMessage}
                 </div>
             )}
-
             <Form
                 fields={fields}
                 initialValues={initialValues}

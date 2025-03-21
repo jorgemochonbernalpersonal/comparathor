@@ -1,5 +1,37 @@
 {
     "admin": {
+        "rating": {
+            "list": {
+                "title": "Ratings List",
+                "id": "ID",
+                "user": "User",
+                "product": "Product",
+                "rating": "Rating",
+                "comment": "Comment",
+                "createdAt": "Created At",
+                "noRatingsFound": "No ratings found",
+                "edit": "Edit",
+                "delete": "Delete",
+                "confirmDelete": "Are you sure you want to delete the rating from {user}?",
+                "userName": "User Name",
+                "productName": "Product Name"
+            },
+            "filter": {
+                "title": "Rating Filters",
+                "user": "User",
+                "selectUser": "Select a user",
+                "product": "Product",
+                "selectProduct": "Select a product",
+                "minRating": "Minimum Rating",
+                "maxRating": "Maximum Rating",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "apply": "Apply Filters",
+                "clear": "Clear Filters",
+                "dateRequired": "Both dates are required",
+                "dateError": "Start date cannot be later than the end date"
+            }
+        },
         "user": {
             "list": {
                 "userList": "User List",
@@ -56,97 +88,100 @@
                 "id": "ID",
                 "name": "Name",
                 "category": "Category",
+                "brand": "Brand",
                 "price": "Price",
                 "stock": "Stock",
-                "brand": "Brand",
-                "model": "Model",
-                "image": "Image",
-                "noImage": "No image",
-                "created": "Created",
+                "createdAt": "Created At",
                 "edit": "Edit",
                 "delete": "Delete",
-                "confirmDelete": "Are you sure you want to delete the product {name}?",
-                "noProductsFound": "No products found.",
-                "editProduct": "Edit Product",
-                "createProduct": "Create Product"
+                "createProduct": "Create Product",
+                "image": "Image",
+                "noProductsFound": "No products found",
+                "description": "Description",
+                "createdBy": "Producto creado"
+            },
+            "filter": {
+                "title": "Product Filters",
+                "minPrice": "Minimum Price",
+                "maxPrice": "Maximum Price",
+                "minStock": "Minimum Stock",
+                "maxStock": "Maximum Stock",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "dateRequired": "Both dates are required",
+                "dateError": "Start date cannot be later than the end date",
+                "clear": "Clear Filters",
+                "apply": "Apply Filters",
+                "priceRangeError": "Invalid price range. The minimum price cannot be greater than the maximum price",
+                "stockRangeError": "The minimum stock cannot be greater than the maximum stock",
+                "minPriceLabel": "💰 Min Price",
+                "maxPriceLabel": "💰 Max Price",
+                "minStockLabel": "📦 Min Stock",
+                "maxStockLabel": "📦 Max Stock",
+                "createdAt": "📅 Created At"
             },
             "form": {
+                "name": "Product Name",
                 "category": "Category",
-                "name": "Name",
+                "price": "Price",
+                "stock": "Stock",
                 "description": "Description",
                 "brand": "Brand",
                 "model": "Model",
-                "price": "Price",
-                "stock": "Stock",
-                "image": "Image",
-                "isPublic": "Publish?",
-                "saveChanges": "Save Changes",
+                "image": "Product Image",
                 "createProduct": "Create Product",
-                "cancel": "Cancel",
-                "saving": "Saving...",
-                "preview": "Image Preview",
-                "uploadingImage": "Uploading image...",
-                "error": "An error occurred while saving the product.",
+                "saveChanges": "Save Changes",
                 "validation": {
-                    "category": "Category is required",
-                    "name": "Name is required",
-                    "nameMin": "At least 2 characters",
-                    "description": "Description is required",
-                    "brand": "Brand is required",
-                    "model": "Model is required",
-                    "price": "Price is required",
-                    "pricePositive": "Must be a positive number",
-                    "stock": "Stock is required",
-                    "stockInteger": "Must be an integer",
-                    "stockMin": "Must be at least 0",
-                    "imageRequired": "The image is required"
+                    "name": "Product name is required.",
+                    "description": "Description is required.",
+                    "price": "Price is required.",
+                    "priceMin": "Price must be greater than zero.",
+                    "stock": "Stock is required.",
+                    "stockMin": "Stock must be at least 1.",
+                    "category": "Category is required.",
+                    "brand": "Brand is required.",
+                    "imageRequired": "An image is required.",
+                    "model": "Model is required."
                 }
-            },
-            "filter": {
-                "title": "Advanced Product Filters",
-                "from": "From",
-                "to": "To",
-                "category": "Category",
-                "selectCategory": "All Categories",
-                "minPrice": "Minimum Price",
-                "maxPrice": "Maximum Price",
-                "apply": "Apply Filters",
-                "clear": "Clear Filters",
-                "cancel": "Cancel",
-                "dateError": "'To' date cannot be earlier than 'From' date",
-                "priceError": "Minimum price cannot be greater than maximum price",
-                "loadingCategories": "Loading categories..."
             }
         },
         "role": {
             "list": {
                 "roleList": "Role List",
-                "id": "ID",
-                "name": "Role Name",
+                "name": "Name",
                 "description": "Description",
+                "createdAt": "Created At",
+                "updatedAt": "Updated At",
+                "createdBy": "Created By",
                 "edit": "Edit",
                 "delete": "Delete",
-                "confirmDelete": "Are you sure you want to delete the role {name}?",
-                "noRolesFound": "No roles found.",
-                "editRole": "Edit Role",
-                "createdAt": "Create Role",
-                "updatedAt": "Role update",
-                "createdBy": "Role created by"
+                "createRole": "Create Role"
             },
             "form": {
                 "name": "Role Name",
-                "description": "Description",
-                "saveChanges": "Save Changes",
+                "description": "Role Description",
+                "errors": {
+                    "nameRequired": "The role name is required.",
+                    "nameMin": "The role name must have at least 2 characters.",
+                    "descriptionMax": "The description cannot exceed 500 characters."
+                },
                 "createRole": "Create Role",
+                "saveChanges": "Save Changes"
+            },
+            "filter": {
+                "title": "Role Filters",
+                "roleName": "Role Name",
+                "from": "From",
+                "to": "To",
+                "updatedFrom": "Updated From",
+                "updatedTo": "Updated To",
+                "createdBy": "Created By",
+                "apply": "Apply Filters",
+                "clear": "Clear Filters",
                 "cancel": "Cancel",
-                "saving": "Saving...",
-                "error": "An error occurred while saving the role.",
-                "validation": {
-                    "name": "Role name is required",
-                    "nameMin": "At least 2 characters",
-                    "descriptionMax": "Maximum 500 characters",
-                    "generalError": "Request error"
-                }
+                "dateError": "'To' date cannot be earlier than 'From' date",
+                "loadingRoles": "Loading roles...",
+                "dateRequired": "Both dates are mandatory"
             }
         }
     },
@@ -178,19 +213,9 @@
             "clear": "Clear",
             "apply": "Apply"
         },
-        "messages": {
-            "loading": "Loading...",
-            "error": "An error occurred, please try again.",
-            "success": "Action completed successfully."
-        },
         "confirmations": {
             "delete": "Are you sure you want to delete this item?",
             "unsavedChanges": "You have unsaved changes. Do you really want to leave?"
-        },
-        "filterBar": {
-            "searchPlaceholder": "Search...",
-            "filters": "Filters",
-            "create": "Create"
         },
         "form": {
             "imagePreview": "📷 Image Preview"
@@ -205,6 +230,49 @@
         },
         "loading": {
             "loading": "Loading..."
+        },
+        "actions": {
+            "clearSelection": "Clear Selection",
+            "filter": "Apply Filters"
+        },
+        "filterBar": {
+            "searchPlaceholder": "Search...",
+            "filters": "Filters",
+            "create": "Create",
+            "uploadExcel": "Upload Excel",
+            "downloadTemplate": "Download Template"
+        },
+        "messages": {
+            "uploadSuccess": "File uploaded successfully.",
+            "uploadError": "Error uploading the file.",
+            "downloadStarted": "Download started...",
+            "fileEmptyError": "The file cannot be empty.",
+            "fileFormatError": "Unsupported file format. Only .xlsx and .ods are allowed.",
+            "uploadProcessing": "Processing file upload...",
+            "roleNotFound": "Role '{role}' does not exist in the database.",
+            "userExists": "User with email {email} is already registered.",
+            "fileSizeExceeded": "The file contains too many records. Maximum allowed: {maxRecords}",
+            "loading": "Loading..."
+        },
+        "excel": {
+            "upload": {
+                "title": "Uploading File...",
+                "processingMessage": "Please wait, the file is being uploaded...",
+                "errorTitle": "Upload Errors",
+                "closeButton": "Close"
+            },
+            "download": {
+                "starting": "Starting download...",
+                "error": "Error downloading the template."
+            }
+        },
+        "errors": {
+            "general": "An unexpected error occurred.",
+            "400": "Bad Request",
+            "401": "Unauthorized",
+            "403": "Forbidden",
+            "404": "Not Found",
+            "500": "Internal Server Error"
         }
     },
     "registered": {
@@ -248,28 +316,91 @@
             }
         },
         "comparison": {
-            "title": "Product Comparison",
-            "category": "Category",
-            "price": "Price",
-            "stock": "Stock",
-            "description": "Description",
-            "brand": "Brand",
-            "model": "Model",
-            "image": "Image",
-            "rating": "Rating",
-            "actions": "Actions",
-            "remove": "Remove",
-            "compareNow": "Compare Now",
-            "noComparison": "No products selected for comparison.",
-            "errorLoading": "An error occurred while loading the comparison.",
-            "bestRated": "Best Rated",
-            "saveComparison": "Save Comparison",
-            "comparisonSaved": "Comparison saved successfully!",
-            "titleLabel": "Comparison Title",
-            "descriptionLabel": "Comparison Description",
-            "enterTitle": "Enter a title for your comparison",
-            "enterDescription": "Enter a description for your comparison",
-            "name": "Product name"
+            "title": "Comparisons",
+            "list": {
+                "title": "Product Comparison",
+                "category": "Category",
+                "price": "Price",
+                "stock": "Stock",
+                "description": "Description",
+                "brand": "Brand",
+                "model": "Model",
+                "image": "Image",
+                "rating": "Rating",
+                "actions": "Actions",
+                "remove": "Remove",
+                "compareNow": "Compare Now",
+                "noComparison": "No products selected for comparison.",
+                "errorLoading": "An error occurred while loading the comparison.",
+                "bestRated": "Best Rated",
+                "saveComparison": "Save Comparison",
+                "comparisonSaved": "Comparison saved successfully!",
+                "titleLabel": "Comparison Title",
+                "descriptionLabel": "Comparison Description",
+                "enterTitle": "Enter a title for your comparison",
+                "enterDescription": "Enter a description for your comparison",
+                "name": "Product name",
+                "selectComparison": "Select a comparison...",
+                "maxComparisonsWarning": "⚠️ You can only select up to 3 comparisons.",
+                "noFilteredResults": "No comparisons match your filters.",
+                "compareLimitReached": "You have reached the maximum number of comparisons allowed.",
+                "clearSelection": "Clear Selection"
+            },
+            "filter": {
+                "filterTitle": "Comparison Filters",
+                "filterName": "Product Name",
+                "filterCategory": "Category",
+                "filterPrice": "Price",
+                "filterStock": "Stock",
+                "filterDescription": "Description",
+                "filterBrand": "Brand",
+                "filterModel": "Model",
+                "applyFilters": "Apply Filters",
+                "clearFilters": "Clear Filters",
+                "cancel": "Cancel"
+            },
+            "form": {
+                "title": "Comparison Form",
+                "titleLabel": "Title",
+                "enterTitle": "Enter title",
+                "descriptionLabel": "Description",
+                "enterDescription": "Enter description",
+                "category": "Category",
+                "price": "Price",
+                "stock": "Stock",
+                "description": "Description",
+                "brand": "Brand",
+                "model": "Model",
+                "image": "Image",
+                "saveComparison": "Save Comparison"
+            }
+        },
+        "userComparison": {
+            "list": {
+                "comparisonListTitle": "My Comparisons",
+                "id": "ID",
+                "title": "Title",
+                "user": "User",
+                "productCount": "Number of Products",
+                "createdAt": "Created At",
+                "actions": "Actions",
+                "edit": "Edit",
+                "delete": "Delete",
+                "viewDetails": "View Details",
+                "noComparisonsFound": "No comparisons found."
+            },
+            "filter": {
+                "title": "Comparison Filters",
+                "user": "User",
+                "selectUser": "Select a user",
+                "comparisonTitle": "Comparison Title",
+                "startDate": "Start Date",
+                "endDate": "End Date",
+                "applyFilters": "Apply Filters",
+                "clearFilters": "Clear Filters",
+                "dateRequired": "Both dates are required",
+                "dateError": "Start date cannot be later than the end date"
+            }
         }
     }
 }

@@ -23,12 +23,12 @@ export const RoleProvider = ({ children }) => {
         initialData: { roles: [], total: 0 },
         enabled: false,
     });
-    
+
     const refetchRoles = () => {
         if (typeof refetch === "function") {
             refetch();
         } else {
-            console.warn("⚠ `refetchRoles` no está disponible.");
+            console.warn("`refetchRoles` no está disponible.");
         }
     };
 
@@ -36,11 +36,11 @@ export const RoleProvider = ({ children }) => {
         mutationFn: async (newRole) => await addRole(fetchData, newRole),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["roles"]);
-            toast.success(data.message || "✅ Rol agregado con éxito.");
+            toast.success(data.message || "Rol agregado con éxito.");
             refetchRoles();
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al agregar el rol."));
+            toast.error(getErrorMessage(error, "Error al agregar el rol."));
         },
     });
 
@@ -48,7 +48,7 @@ export const RoleProvider = ({ children }) => {
         mutationFn: async ({ roleId, updatedData }) => await updateRoleById(fetchData, roleId, updatedData),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["roles"]);
-            toast.success(data.message || "✅ Rol actualizado con éxito.");
+            toast.success(data.message || "Rol actualizado con éxito.");
             refetchRoles();
         },
         onError: (error) => {
@@ -60,11 +60,11 @@ export const RoleProvider = ({ children }) => {
         mutationFn: async (roleId) => await deleteRoleById(fetchData, roleId),
         onSuccess: (data) => {
             queryClient.invalidateQueries(["roles"]);
-            toast.success(data.message || "✅ Rol eliminado con éxito.");
+            toast.success(data.message || "Rol eliminado con éxito.");
             refetchRoles();
         },
         onError: (error) => {
-            toast.error(getErrorMessage(error, "❌ Error al eliminar el rol."));
+            toast.error(getErrorMessage(error, "Error al eliminar el rol."));
         },
     });
 

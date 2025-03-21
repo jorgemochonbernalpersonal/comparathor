@@ -6,13 +6,20 @@ import {
     createUser,
 } from "./UserRequest";
 
+const parseError = (error, defaultMessage) => {
+    if (error.response && error.response.data) {
+        return error.response.data.message || defaultMessage;
+    }
+    return error.message || defaultMessage;
+};
+
 export const getAllUsers = async (fetchData, filters = {}) => {
     try {
         const queryParams = new URLSearchParams({
             page: filters.page ?? 0,
             size: filters.size ?? 10,
-            sortField: filters.sortField ?? "id",  
-            sortOrder: filters.sortOrder ?? "asc", 
+            sortField: filters.sortField ?? "id",
+            sortOrder: filters.sortOrder ?? "asc",
         });
 
         if (filters.role_id) queryParams.append("roleId", filters.role_id);
@@ -22,65 +29,66 @@ export const getAllUsers = async (fetchData, filters = {}) => {
 
         const endpoint = `users?${queryParams.toString()}`;
         const response = await fetchAllUsers(fetchData, endpoint);
-        console.log(endpoint)
 
         return {
             total: response.total ?? 0,
             users: response.content ?? [],
         };
     } catch (error) {
-        return { total: 0, users: [] };
+        throw new Error(parseError(error, "Error al obtener los usuarios."));
     }
 };
 
 export const createUserById = async (fetchData, userData) => {
     try {
         if (typeof fetchData !== "function") {
-            throw new Error("❌ fetchData no es una función válida.");
+            throw new Error("fetchData no es una función válida.");
         }
 
         const createdUser = await createUser(fetchData, userData);
 
         if (!createdUser || createdUser.error) {
-            throw new Error(createdUser?.message || "❌ Error al registrar el usuario.");
+            throw new Error(createdUser?.message || "Error al registrar el usuario.");
         }
 
         return createdUser;
     } catch (error) {
-        console.error("❌ Error en createUserById:", error);
-        const parseError = (error) => {
-            if (error.response && error.response.data) {
-                return error.response.data.message || "❌ Error al registrar el usuario.";
-            }
-            return error.message || "❌ Error al registrar el usuario.";
-        };
-        throw new Error(parseError(error));
+        throw new Error(parseError(error, "Error al registrar el usuario."));
     }
 };
-
 
 export const getUserById = async (fetchData, userId) => {
     try {
         return await fetchUserById(fetchData, userId);
     } catch (error) {
-        return null;
+        throw new Error(parseError(error, "Error al obtener el usuario."));
     }
 };
 
 export const updateUserById = async (fetchData, userId, userData) => {
     try {
         const updatedUser = await updateUser(fetchData, userId, userData);
+
+        if (!updatedUser || updatedUser.error) {
+            throw new Error(updatedUser?.message || "Error al actualizar el usuario.");
+        }
+
         return updatedUser;
     } catch (error) {
-        return null;
+        throw new Error(parseError(error, "Error al actualizar el usuario."));
     }
 };
 
 export const deleteUserById = async (fetchData, userId) => {
     try {
-        await deleteUser(fetchData, userId);
-        console.log(`🗑️ Usuario con ID ${userId} eliminado.`);
+        const deletedUser = await deleteUser(fetchData, userId);
+
+        if (!deletedUser || deletedUser.error) {
+            throw new Error(deletedUser?.message || "Error al eliminar el usuario.");
+        }
+
+        return deletedUser;
     } catch (error) {
-        console.error("❌ Error eliminando usuario:", error);
+        throw new Error(parseError(error, "Error al eliminar el usuario."));
     }
 };

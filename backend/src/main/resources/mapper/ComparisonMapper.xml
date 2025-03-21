@@ -21,6 +21,12 @@
         WHERE 1=1
         <include refid="ComparisonFilterConditions"/>
         <include refid="ProductFilterConditions"/>
+        <if test="comparisonIds != null and !comparisonIds.isEmpty()">
+            AND c.id IN
+            <foreach collection="comparisonIds" item="compId" open="(" separator="," close=")">
+                #{compId}
+            </foreach>
+        </if>
         <if test="sortField != null and sortOrder != null">
             ORDER BY
             <choose>
@@ -50,6 +56,12 @@
         WHERE 1=1
         <include refid="ComparisonFilterConditions"/>
         <include refid="ProductFilterConditions"/>
+        <if test="comparisonIds != null and !comparisonIds.isEmpty()">
+            AND c.id IN
+            <foreach collection="comparisonIds" item="compId" open="(" separator="," close=")">
+                #{compId}
+            </foreach>
+        </if>
     </select>
 
     <insert id="save" useGeneratedKeys="true" keyProperty="id">

@@ -4,8 +4,7 @@ import com.comparathor.exception.BadRequestException;
 import com.comparathor.exception.ForbiddenException;
 import com.comparathor.service.AuthService;
 import com.comparathor.service.UserSecurityService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,17 +12,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
 @RequestMapping("/api/auth")
+@RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
     private final UserSecurityService userSecurityService;
-    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
-    public AuthController(AuthService authService, UserSecurityService userSecurityService) {
-        this.authService = authService;
-        this.userSecurityService = userSecurityService;
-    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> loginRequest) {

@@ -2,9 +2,9 @@ package com.comparathor.controller;
 
 import com.comparathor.exception.BadRequestException;
 import com.comparathor.exception.ForbiddenException;
-import com.comparathor.repository.RoleRepository;
 import com.comparathor.service.UserSecurityService;
 import com.comparathor.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,18 +15,15 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
     private final UserSecurityService userSecurityService;
 
-    public UserController(UserService userService, UserSecurityService userSecurityService) {
-        this.userService = userService;
-        this.userSecurityService = userSecurityService;
-    }
-
     @GetMapping
     public Map<String, Object> getUsersFiltered(
             @RequestHeader("Authorization") String token,
+            @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "roleId", required = false) Long roleId,
             @RequestParam(name = "searchTerm", required = false) String searchTerm,
             @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -38,7 +35,7 @@ public class UserController {
         validateAccess(token);
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
-        return userService.getFilteredUsers(roleId, searchTerm, startDateTime, endDateTime, page, size, sortField, sortOrder);
+        return userService.getFilteredUsers(search,roleId, searchTerm, startDateTime, endDateTime, page, size, sortField, sortOrder);
     }
 
     @PostMapping
@@ -46,7 +43,7 @@ public class UserController {
                                                           @RequestBody Map<String, String> request) {
         validateAccess(token);
         if (!request.containsKey("name") || !request.containsKey("email") || !request.containsKey("password")) {
-            throw new BadRequestException("❌ Se requiere name, email y password.");
+            throw new BadRequestException("Se requiere name, email y password.");
         }
         Long roleId = request.containsKey("roleId") ? Long.parseLong(request.get("roleId")) : 2L;
         Map<String, Object> response = userService.registerUser(

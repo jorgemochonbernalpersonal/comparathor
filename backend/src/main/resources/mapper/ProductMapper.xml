@@ -4,66 +4,55 @@
 
 <mapper namespace="com.comparathor.repository.ProductRepository">
 
-    <!-- 🔹 Mapeo de resultados para Product -->
     <resultMap id="ProductResultMap" type="com.comparathor.model.Product">
         <id property="id" column="id"/>
         <result property="name" column="name"/>
-        <result property="category" column="category"/>
+        <result property="categoryId" column="category_id"/>
+        <result property="categoryName" column="category_name"/>
+        <result property="brandId" column="brand_id"/>
+        <result property="brandName" column="brand_name"/>
         <result property="price" column="price"/>
         <result property="stock" column="stock"/>
-        <result property="description" column="description"/>
-        <result property="brand" column="brand"/>
         <result property="model" column="model"/>
         <result property="imageUrl" column="image_url"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <!-- 🔹 Condiciones de Filtro Reutilizables -->
     <sql id="ProductFilterConditions">
-        <if test="name != null and name != ''">
-            AND LOWER(p.name) LIKE LOWER(CONCAT('%', #{name}, '%'))
+        <if test="search != null and search != ''">
+            AND (
+            LOWER(p.name) LIKE LOWER(CONCAT('%', #{search}, '%'))
+            OR LOWER(p.description) LIKE LOWER(CONCAT('%', #{search}, '%'))
+            OR LOWER(p.model) LIKE LOWER(CONCAT('%', #{search}, '%'))
+            )
         </if>
-
-        <if test="category != null and category != ''">
-            AND LOWER(p.category) = LOWER(#{category})
+        <if test="categoryId != null">
+            AND p.category_id = #{categoryId}
         </if>
-
-        <if test="brand != null and brand != ''">
-            AND LOWER(p.brand) = LOWER(#{brand})
+        <if test="brandId != null">
+            AND p.brand_id = #{brandId}
         </if>
-
         <if test="minPrice != null">
             AND p.price >= #{minPrice}
         </if>
-
         <if test="maxPrice != null">
             AND p.price &lt;= #{maxPrice}
         </if>
-
-        <if test="stock != null">
-            AND p.stock >= #{stock}
+        <if test="minStock != null and minStock != ''">
+            AND p.stock >= #{minStock}::INTEGER
         </if>
-
-        <if test="searchTerm != null and searchTerm != ''">
-            AND (
-            LOWER(p.name) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            OR LOWER(p.description) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            OR LOWER(p.brand) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            OR LOWER(p.model) LIKE LOWER(CONCAT('%', #{searchTerm}, '%'))
-            )
+        <if test="maxStock != null and maxStock != ''">
+            AND p.stock &lt;= #{maxStock}::INTEGER
         </if>
-
-        <if test="startDate != null and startDate != ''">
-            AND p.created_at &gt;= #{startDate}
+        <if test="startDate != null">
+            AND p.created_at >= #{startDate}
         </if>
-
-        <if test="endDate != null and endDate != ''">
+        <if test="endDate != null">
             AND p.created_at &lt;= #{endDate}
         </if>
     </sql>
 
-    <!-- 🔢 Contar productos filtrados -->
     <select id="countFilteredProducts" resultType="int">
         SELECT COUNT(*)
         FROM products p
@@ -71,74 +60,90 @@
         <include refid="ProductFilterConditions"/>
     </select>
 
-    <!-- 🔍 Buscar productos con filtros, ordenamiento y paginación -->
     <select id="findFilteredProducts" resultMap="ProductResultMap">
-        SELECT p.id, p.name, p.category, p.price, p.stock, p.description,
-        p.brand, p.model, p.image_url, p.created_at, p.updated_at
+        SELECT
+        p.id, p.name, p.category_id, c.name AS category_name,
+        p.brand_id, b.name AS brand_name, p.price, p.stock,
+        p.model, p.image_url, p.created_at, p.updated_at, p.description,p.created_by
         FROM products p
+        LEFT JOIN categories c ON p.category_id = c.id
+        LEFT JOIN brands b ON p.brand_id = b.id
         WHERE 1=1
         <include refid="ProductFilterConditions"/>
-
-        <if test="sortField != null and sortOrder != null">
+        <if test="sortField != null and sortField != '' and sortOrder != null and sortOrder != ''">
             ORDER BY
             <choose>
-                <when test="sortField == 'name'"> p.name </when>
-                <when test="sortField == 'price'"> p.price </when>
-                <when test="sortField == 'stock'"> p.stock </when>
-                <when test="sortField == 'createdAt'"> p.created_at </when>
-                <when test="sortField == 'updatedAt'"> p.updated_at </when>
-                <otherwise> p.created_at </otherwise>
+                <when test="sortField == 'id'">p.id</when>
+                <when test="sortField == 'name'">p.name</when>
+                <when test="sortField == 'price'">p.price</when>
+                <when test="sortField == 'stock'">p.stock</when>
+                <when test="sortField == 'createdAt'">p.created_at</when>
+                <otherwise>p.id</otherwise>
             </choose>
             <choose>
-                <when test="sortOrder == 'asc'"> ASC </when>
-                <otherwise> DESC </otherwise>
+                <when test="sortOrder == 'asc'">ASC</when>
+                <otherwise>DESC</otherwise>
             </choose>
         </if>
-        LIMIT #{size} OFFSET #{offset}
+        <if test="size != null and size > 0">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
     </select>
 
-    <!-- 🔍 Buscar un producto por ID -->
-    <select id="findById" resultMap="ProductResultMap">
-        SELECT p.id, p.name, p.category, p.price, p.stock, p.description,
-               p.brand, p.model, p.image_url, p.created_at, p.updated_at
+    <select id="findAll" resultMap="ProductResultMap">
+        SELECT p.id,
+               p.name,
+               p.category_id,
+               c.name AS category_name,
+               p.brand_id,
+               b.name AS brand_name,
+               p.price,
+               p.stock,
+               p.model,
+               p.image_url,
+               p.created_at,
+               p.updated_at
         FROM products p
-        WHERE p.id = #{id}
+                 LEFT JOIN categories c ON p.category_id = c.id
+                 LEFT JOIN brands b ON p.brand_id = b.id
     </select>
-
-    <!-- 🔍 Verificar si un producto con un ID específico existe -->
-    <select id="existsById" resultType="int">
-        SELECT COUNT(*) FROM products WHERE id = #{id}
+    <select id="existsByName" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM products
+        WHERE LOWER(TRIM(name)) = LOWER(TRIM(#{name}))
     </select>
-
-    <!-- 🔍 Verificar si un producto con un nombre específico existe -->
-    <select id="existsByName" resultType="int">
-        SELECT COUNT(*) FROM products WHERE LOWER(name) = LOWER(#{name})
-    </select>
-
-    <!-- ➕ Insertar un nuevo producto -->
     <insert id="save" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO products (name, category, price, stock, description, brand, model, image_url, created_at, updated_at)
-        VALUES (#{name}, #{category}, #{price}, #{stock}, #{description}, #{brand}, #{model}, #{imageUrl}, #{createdAt}, #{updatedAt})
+        INSERT INTO products (name, category_id, brand_id, price, stock, description, model, image_url, created_at,
+                              updated_at, created_by)
+        VALUES (#{name}, #{categoryId}, #{brandId}, #{price}, #{stock}, #{description}, #{model}, #{imageUrl}, NOW(),
+                NOW(), #{createdBy})
     </insert>
 
-    <!-- ✏️ Actualizar un producto existente -->
-    <update id="updateProduct">
-        UPDATE products
-        SET name = #{name},
-            category = #{category},
-            price = #{price},
-            stock = #{stock},
-            description = #{description},
-            brand = #{brand},
-            model = #{model},
-            image_url = #{imageUrl},
-            updated_at = #{updatedAt}
-        WHERE id = #{id}
-    </update>
-
-    <!-- 🗑️ Eliminar un producto por ID -->
-    <delete id="delete">
-        DELETE FROM products WHERE id = #{id}
+    <delete id="deleteById">
+        DELETE FROM products WHERE id = #{id};
     </delete>
-
+    <select id="findById" resultMap="ProductResultMap">
+        SELECT * FROM products WHERE id = #{id}
+    </select>
+    <insert id="saveAll">
+        INSERT INTO products (name, category_id, brand_id, price, stock, description, model, image_url, created_at, updated_at)
+        VALUES
+        <foreach collection="products" item="product" separator=",">
+            (#{product.name}, #{product.categoryId}, #{product.brandId}, #{product.price}, #{product.stock},
+            #{product.description}, #{product.model}, #{product.imageUrl}, NOW(), NOW())
+        </foreach>
+    </insert>
+    <update id="updateAll">
+        <foreach collection="products" item="product" separator=";">
+            UPDATE products
+            SET image_url = #{product.imageUrl}, updated_at = NOW()
+            WHERE id = #{product.id}
+        </foreach>
+    </update>
+    <select id="findByImageUrl" resultType="Product">
+        SELECT id, name, category_id, brand_id, price, stock, description, model, image_url, created_at, updated_at
+        FROM products
+        WHERE LOWER(TRIM(image_url)) LIKE LOWER(TRIM(CONCAT('%', #{imageUrl}, '%')))
+            LIMIT 1
+    </select>
 </mapper>

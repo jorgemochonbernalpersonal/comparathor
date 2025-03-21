@@ -17,7 +17,7 @@ const RoleFilters = ({ open, onClose, onApplyFilters }) => {
     const [dateError, setDateError] = useState("");
 
     useEffect(() => {
-        if (open) {  // <-- Verificamos que `open` sea `true`
+        if (open) {  
             setFilters({
                 roleName: searchParams.get("roleName") || "",
                 startDate: searchParams.get("startDate") || "",
@@ -28,7 +28,7 @@ const RoleFilters = ({ open, onClose, onApplyFilters }) => {
             });
             setDateError("");
         }
-    }, [open]);  // <-- Corregido
+    }, [open]); 
 
     const validateDates = (start, end) => {
         if (!start && !end) return true;

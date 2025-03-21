@@ -16,4 +16,5 @@ public class Rating {
     private String comment;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Product product;
 }

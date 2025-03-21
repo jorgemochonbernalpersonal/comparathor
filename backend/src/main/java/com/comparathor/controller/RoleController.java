@@ -63,8 +63,8 @@ public class RoleController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> getFilteredRoles(
             @RequestHeader("Authorization") String token,
+            @RequestParam(name = "search", required = false) String search,
             @RequestParam(name = "roleName", required = false) String roleName,
-            @RequestParam(name = "searchTerm", required = false) String searchTerm,
             @RequestParam(name = "startDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam(name = "endDate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @RequestParam(name = "roleCreatedBy", required = false) String roleCreatedBy,
@@ -75,10 +75,9 @@ public class RoleController {
         LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
         LocalDateTime endDateTime = (endDate != null) ? endDate.atTime(23, 59, 59) : null;
         try {
-            Map<String, Object> response = roleService.getFilteredRoles(roleName, startDateTime, endDateTime, roleCreatedBy, sortField, sortOrder, searchTerm);
+            Map<String, Object> response = roleService.getFilteredRoles(search,roleName, startDateTime, endDateTime, roleCreatedBy, sortField, sortOrder);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            logger.error("❌ Error al obtener roles: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("error", "Error al obtener roles"));
         }
@@ -92,7 +91,7 @@ public class RoleController {
         String roleCreatedByFromToken = userSecurityService.getUsernameFromToken(token);
         validateAccess(token);
         if (!request.containsKey("name") && !request.containsKey("description")) {
-            throw new BadRequestException("❌ Se requiere al menos un campo para actualizar.");
+            throw new BadRequestException("Se requiere al menos un campo para actualizar.");
         }
         String name = request.get("name");
         String description = request.get("description");
@@ -108,13 +107,10 @@ public class RoleController {
         validateAccess(token);
         try {
             roleService.deleteRole(id);
-            logger.info("✅ Role deleted with ID: {}", id);
             return ResponseEntity.ok(Collections.singletonMap("message", "✅ Role successfully deleted."));
         } catch (ResourceNotFoundException e) {
-            logger.warn("❌ Error al eliminar, rol no encontrado (ID: {}): {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Collections.singletonMap("error", e.getMessage()));
         } catch (Exception e) {
-            logger.error("❌ Error inesperado al eliminar rol (ID: {}): {}", id, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.singletonMap("error", "Error interno al eliminar el rol."));
         }
     }

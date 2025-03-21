@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Alert, Button, IconButton } from "@mui/material";
 import { translate } from "../../utils/Translate";
-import { ExpandMore, ExpandLess, ArrowBack, ArrowForward } from "@mui/icons-material";
-import "../../styles/shared/Table.css";
+import { ExpandMore, ExpandLess } from "@mui/icons-material";
+import ConfirmModal from "./ConfirmModal";
+import Pagination from "./Pagination";
 
 const breakpoints = {
     xs: 480,
@@ -25,6 +26,9 @@ const Table = ({
 }) => {
     const [screenWidth, setScreenWidth] = useState(window.innerWidth);
     const [expandedRows, setExpandedRows] = useState({});
+    const [pendingAction, setPendingAction] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(null);
 
     useEffect(() => {
         const handleResize = () => {
@@ -58,6 +62,7 @@ const Table = ({
     const shouldShowExpandButton = () => (
         (isMd && hiddenColumnsBreakpoints?.md?.length > 0) ||
         (isSm && hiddenColumnsBreakpoints?.sm?.length > 0) ||
+        (isLg && hiddenColumnsBreakpoints?.lg?.length > 0) ||
         (isXs && hiddenColumnsBreakpoints?.xs?.length > 0)
     );
 
@@ -66,8 +71,18 @@ const Table = ({
         return sortOrder === "asc" ? "▲" : "▼";
     };
 
+    const handleAction = (action, row) => {
+        if (action.label.includes("🗑️")) {
+            setSelectedRow(row);
+            setPendingAction(() => () => action.handler(row));
+            setIsModalOpen(true);
+        } else {
+            action.handler(row);
+        }
+    };
+
     return (
-        <div className="table-container">
+        <div className="table-container mb-5">
             <div className="table-responsive">
                 <table className="table table-bordered table-hover">
                     <thead className="table-dark">
@@ -129,7 +144,7 @@ const Table = ({
                                                             variant={action.type === "danger" ? "contained" : "outlined"}
                                                             color={action.type === "danger" ? "error" : "primary"}
                                                             size="small"
-                                                            onClick={() => action.handler(row)}
+                                                            onClick={() => handleAction(action, row)}
                                                             sx={{ margin: "2px" }}
                                                         >
                                                             {action.label}
@@ -169,34 +184,21 @@ const Table = ({
                     </tbody>
                 </table>
             </div>
-
-            {totalPages && onPageChange ? (
-                <div className="pagination-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", marginTop: "10px" }}>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ArrowBack />}
-                        disabled={currentPage === 0}
-                        onClick={() => onPageChange(currentPage - 1)}
-                        sx={{ marginRight: 2 }}
-                    >
-                        {translate("shared.table.previous")}
-                    </Button>
-
-                    <span className="pagination-text">
-                        {translate("shared.table.page")} {currentPage + 1} {translate("shared.table.of")} {totalPages}
-                    </span>
-
-                    <Button
-                        variant="outlined"
-                        endIcon={<ArrowForward />}
-                        disabled={currentPage >= totalPages - 1}
-                        onClick={() => onPageChange(currentPage + 1)}
-                        sx={{ marginLeft: 2 }}
-                    >
-                        {translate("shared.table.next")}
-                    </Button>
-                </div>
-            ) : null}
+            <ConfirmModal
+                isOpen={isModalOpen}
+                title="Confirmar eliminación"
+                message={selectedRow ? `¿Estás seguro de que deseas eliminar "${selectedRow.name}"?` : ""}
+                onConfirm={() => {
+                    pendingAction();
+                    setIsModalOpen(false);
+                }}
+                onCancel={() => setIsModalOpen(false)}
+            />
+            <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 };

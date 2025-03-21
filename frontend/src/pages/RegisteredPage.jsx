@@ -11,6 +11,7 @@ const RegisteredPage = () => {
                 <RegisteredDashboard />
                 <Outlet />
             </main>
+
         </div>
     );
 };

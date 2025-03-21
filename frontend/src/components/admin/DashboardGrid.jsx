@@ -32,11 +32,11 @@ const DashboardGrid = () => {
             </Link>
 
             <Link
-                to="/admin/settings"
-                className={`dashboard-card teal ${location.pathname === "/admin/settings" ? "active-card" : "inactive-card"}`}
+                to="/admin/ratings"
+                className={`dashboard-card teal ${location.pathname === "/admin/ratings" ? "active-card" : "inactive-card"}`}
             >
                 <i className="bi bi-gear"></i>
-                <h3>Configuraciones</h3>
+                <h3>Ratings</h3>
             </Link>
         </div>
     );

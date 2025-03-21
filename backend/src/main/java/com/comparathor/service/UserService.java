@@ -1,5 +1,6 @@
 package com.comparathor.service;
 
+import com.comparathor.controller.ProductController;
 import com.comparathor.exception.BadRequestException;
 import com.comparathor.model.Role;
 import com.comparathor.model.User;
@@ -8,12 +9,8 @@ import com.comparathor.repository.UserRepository;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -27,15 +24,15 @@ public class UserService {
         this.emailService = emailService;
     }
 
-    public Map<String, Object> getFilteredUsers(Long roleId, String searchTerm,
+    public Map<String, Object> getFilteredUsers(String search, Long roleId, String searchTerm,
                                                 LocalDateTime startDate, LocalDateTime endDate,
                                                 int page, int size, String sortField, String sortOrder) {
         size = (size <= 0) ? 10 : size;
-        int totalUsers = userRepository.countFilteredUsers(roleId, searchTerm, startDate, endDate);
+        int totalUsers = userRepository.countFilteredUsers(search,roleId, searchTerm, startDate, endDate);
         int offset = (page * size >= totalUsers) ? Math.max(0, totalUsers - size) : page * size;
         System.out.println("✅ Total usuarios: " + totalUsers);
         System.out.println("✅ Offset corregido: " + offset);
-        List<User> users = userRepository.findFilteredUsers(roleId, searchTerm, startDate, endDate, size, offset, sortField, sortOrder);
+        List<User> users = userRepository.findFilteredUsers(search,roleId, searchTerm, startDate, endDate, size, offset, sortField, sortOrder);
         System.out.println("📌 Usuarios encontrados: " + users.size());
         Map<String, Object> response = new HashMap<>();
         response.put("content", users);
@@ -133,4 +130,66 @@ public class UserService {
         return response;
     }
 
+    @Transactional
+    public Map<String, Object> bulkInsertUsers(List<Map<String, Object>> usersData) {
+        List<User> usersToSave = new ArrayList<>();
+        List<String> errors = new ArrayList<>();
+        LocalDateTime now = LocalDateTime.now();
+        Map<String, String> userPasswords = new HashMap<>();
+
+        for (Map<String, Object> row : usersData) {
+            String name = row.get("name") != null ? row.get("name").toString().trim() : null;
+            String email = row.get("email") != null ? row.get("email").toString().trim() : null;
+            String roleName = row.get("role") != null ? row.get("role").toString().trim() : null;
+
+            if (name == null || email == null || roleName == null) {
+                errors.add("Datos incompletos en fila: " + row);
+                continue;
+            }
+            if (userRepository.findByEmail(email) != null) {
+                errors.add("Usuario con email " + email + " ya está registrado.");
+                continue;
+            }
+            if (roleRepository.existsByName(roleName) == 0) {
+                errors.add("Rol '" + roleName + "' no existe en la base de datos.");
+                continue;
+            }
+
+            Long roleId = roleRepository.findIdByName(roleName);
+            if (roleId == null) {
+                errors.add("No se encontró el ID del rol '" + roleName + "' después de validación.");
+                continue;
+            }
+
+            String generatedPassword = generateRandomPassword();
+            User user = new User();
+            user.setName(name);
+            user.setEmail(email);
+            user.setPassword(BCrypt.hashpw(generatedPassword, BCrypt.gensalt()));
+            user.setCreatedAt(now);
+            user.setUpdatedAt(now);
+            user.setRoleId(roleId);
+            usersToSave.add(user);
+            userPasswords.put(email, generatedPassword);
+        }
+
+        // 🚨 Si hay errores, lanzar una excepción con código 400
+        if (!errors.isEmpty()) {
+            throw new BadRequestException("Errores en la carga del archivo", errors);
+        }
+
+        if (!usersToSave.isEmpty()) {
+            for (User user : usersToSave) {
+                userRepository.save(user);
+                emailService.sendUserCreationEmail(user.getEmail(), userPasswords.get(user.getEmail()));
+            }
+        }
+
+        return Map.of("message", "Usuarios insertados: " + usersToSave.size());
+    }
+
+
+    private String generateRandomPassword() {
+        return UUID.randomUUID().toString().substring(0, 8);
+    }
 }

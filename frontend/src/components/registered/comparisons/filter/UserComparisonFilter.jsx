@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { translate } from "../../../../utils/Translate";
 import FilterModal from "../../../shared/FilterModal";
-import { TextField, FormControl} from "@mui/material";
+import { TextField, FormControl } from "@mui/material";
 
 const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] }) => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -69,11 +69,11 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
             onClose={onClose}
             onClear={handleClearFilters}
             onApply={handleApplyFilters}
-            title={translate("registered.comparison.filterTitle")}
+            title={translate("registered.comparison.filter.filterTitle")}
         >
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterName")}
+                    label={translate("registered.comparison.filter.filterName")}
                     name="name"
                     value={filters.name}
                     onChange={handleChange}
@@ -82,7 +82,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterCategory")}
+                    label={translate("registered.comparison.filter.filterCategory")}
                     name="category"
                     value={filters.category}
                     onChange={handleChange}
@@ -91,7 +91,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterPrice")}
+                    label={translate("registered.comparison.filter.filterPrice")}
                     type="number"
                     name="price"
                     value={filters.price}
@@ -101,7 +101,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterStock")}
+                    label={translate("registered.comparison.filter.filterStock")}
                     type="number"
                     name="stock"
                     value={filters.stock}
@@ -111,7 +111,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterDescription")}
+                    label={translate("registered.comparison.filter.filterDescription")}
                     name="description"
                     value={filters.description}
                     onChange={handleChange}
@@ -120,7 +120,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterBrand")}
+                    label={translate("registered.comparison.filter.filterBrand")}
                     name="brand"
                     value={filters.brand}
                     onChange={handleChange}
@@ -129,7 +129,7 @@ const UserComparisonFilter = ({ open, onClose, onApplyFilters, comparisons = [] 
 
             <FormControl fullWidth margin="normal">
                 <TextField
-                    label={translate("registered.comparison.filterModel")}
+                    label={translate("registered.comparison.filter.filterModel")}
                     name="model"
                     value={filters.model}
                     onChange={handleChange}

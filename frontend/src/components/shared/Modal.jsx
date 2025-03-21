@@ -4,7 +4,7 @@ const Modal = ({ title, onClose, children, open = false }) => {
 
     useEffect(() => {
         const handleEscape = (event) => {
-            if (event.key === "Escape" && open) {
+            if (event.key === "Escape" && onClose) {
                 onClose();
             }
         };
@@ -12,7 +12,7 @@ const Modal = ({ title, onClose, children, open = false }) => {
         return () => {
             window.removeEventListener("keydown", handleEscape);
         };
-    }, [open, onClose]);
+    }, [onClose]);
 
     if (!open) return null;
 
@@ -31,7 +31,9 @@ const Modal = ({ title, onClose, children, open = false }) => {
                 <div className="modal-content">
                     <div className="modal-header">
                         <h5 className="modal-title">{title}</h5>
-                        <button type="button" className="btn-close" onClick={onClose}></button>
+                        {!onClose ? null : (
+                            <button type="button" className="btn-close" onClick={onClose}></button>
+                        )}
                     </div>
                     <div className="modal-body">{children}</div>
                 </div>

@@ -27,16 +27,15 @@ public class RoleService {
     @Transactional(readOnly = true)
     public Role getRoleById(Long id) {
         return roleRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("❌ Role not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Role not found with ID: " + id));
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> getFilteredRoles(
-            String roleName, LocalDateTime startDate, LocalDateTime endDate,
-            String roleCreatedBy, String sortField, String sortOrder, String searchTerm) {
-
-        List<Role> roles = roleRepository.findFilteredRoles(roleName, startDate, endDate, roleCreatedBy, sortField, sortOrder, searchTerm);
-        int total = roleRepository.countFilteredRoles(roleName, startDate, endDate, roleCreatedBy, searchTerm);
+            String search,String roleName, LocalDateTime startDate, LocalDateTime endDate,
+            String roleCreatedBy, String sortField, String sortOrder) {
+        List<Role> roles = roleRepository.findFilteredRoles(search,roleName, startDate, endDate, roleCreatedBy, sortField, sortOrder);
+        int total = roleRepository.countFilteredRoles(search,roleName, startDate, endDate, roleCreatedBy);
 
         Map<String, Object> response = new HashMap<>();
         response.put("content", roles);
